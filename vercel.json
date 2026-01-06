@@ -1,0 +1,27 @@
+{
+  "version": 2,
+
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "outputDirectory": "dist",
+        "installCommand": "npm install",
+        "buildCommand": "npm run build"
+      }
+    }
+  ],
+
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "https://malibagsomiti.onrender.com/api/$1"
+    },
+    {
+      "src": "/[^.]+",
+      "dest": "/",
+      "status": 200
+    }
+  ]
+}
