@@ -17,3 +17,44 @@
 ::-webkit-scrollbar-thumb {
   @apply bg-gray-300 rounded-full hover:bg-gray-400;
 }
+
+@media print {
+  /* Hide everything except the table area */
+  .no-print,
+  nav,
+  aside,
+  button,
+  .toast,
+  .sidebar-container {
+    display: none !important;
+  }
+
+  body {
+    background-color: white !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .print-area {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 20px !important;
+  }
+
+  table {
+    width: 100% !important;
+    border: 1px solid #eee !important;
+  }
+
+  th {
+    background-color: #f9fafb !important;
+    color: #374151 !important;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* Force table colors to appear in print */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
