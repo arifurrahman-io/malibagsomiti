@@ -6,6 +6,7 @@ import DashboardLayout from "./layouts/DashboardLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import DashboardSkeleton from "./components/skeleton/DashboardSkeleton";
 import MemberProfileView from "./pages/admin/MemberProfileView";
+import MyProfile from "./pages/member/MyProfile";
 
 // Lazy Loaded Pages (Optimized for Fast Load)
 const Login = lazy(() => import("./pages/auth/Login"));
@@ -15,7 +16,11 @@ const CollectionEntry = lazy(() => import("./pages/admin/CollectionEntry"));
 const MemberHistory = lazy(() => import("./pages/member/MemberHistory"));
 const Unauthorized = lazy(() => import("./pages/Unauthorized"));
 
-// Placeholder components for missing pages to prevent crash
+// --- NEW DYNAMIC FINANCE PAGES ---
+const FinancialEntry = lazy(() => import("./pages/finance/FinancialEntry"));
+const CategoryCRUD = lazy(() => import("./pages/admin/CategoryManager"));
+
+// Placeholder components
 const Investments = lazy(() => import("./pages/admin/Investments"));
 const Reports = lazy(() => import("./pages/admin/Reports"));
 const Settings = lazy(() => import("./pages/Settings"));
@@ -36,7 +41,7 @@ function App() {
           <Route element={<DashboardLayout />}>
             <Route path="/dashboard" element={<MainDashboard />} />
 
-            {/* Admin Only Sections */}
+            {/* Admin & Super-Admin Only Sections */}
             <Route
               element={
                 <ProtectedRoute allowedRoles={["admin", "super-admin"]} />
@@ -48,12 +53,20 @@ function App() {
                 element={<MemberProfileView />}
               />
               <Route path="/admin/collections" element={<CollectionEntry />} />
+
+              {/* 🛠️ NEW: Category & Subcategory Management */}
+              <Route path="/admin/categories" element={<CategoryCRUD />} />
+
+              {/* 💸 NEW: Manual Ledger Entry (Deposits/Expenses) */}
+              <Route path="/admin/finance-entry" element={<FinancialEntry />} />
+
               <Route path="/admin/investments" element={<Investments />} />
               <Route path="/admin/reports" element={<Reports />} />
             </Route>
 
             {/* Member Only Sections */}
             <Route element={<ProtectedRoute allowedRoles={["member"]} />}>
+              <Route path="/member/profile" element={<MyProfile />} />
               <Route path="/member/history" element={<MemberHistory />} />
             </Route>
 

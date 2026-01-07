@@ -65,7 +65,7 @@ const Investments = () => {
   const [profitData, setProfitData] = useState({
     amount: "",
     type: "deposit",
-    month: new Date().getMonth(),
+    month: new Date().toLocaleString("default", { month: "long" }), // Align with string-based logic
     year: new Date().getFullYear(),
     remarks: "",
   });
@@ -98,7 +98,7 @@ const Investments = () => {
       amount: project.amount,
       date: project.date.split("T")[0],
       remarks: project.remarks || "",
-      legalDocs: project.legalDocs, // Keep existing path for UI display if needed
+      legalDocs: project.legalDocs,
     });
     setIsModalOpen(true);
   };
@@ -112,102 +112,68 @@ const Investments = () => {
 
       const printWindow = window.open("", "_blank");
       printWindow.document.write(`
-      <html>
-        <head>
-          <title>Financial Statement - ${p.name}</title>
-          <style>
-            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-            body { font-family: 'Inter', sans-serif; padding: 40px; color: #1e293b; line-height: 1.5; }
-            .header { border-bottom: 4px solid #2563eb; padding-bottom: 20px; margin-bottom: 30px; }
-            .header h1 { margin: 0; font-size: 28px; font-weight: 900; text-transform: uppercase; letter-spacing: -1px; }
-            .meta-grid { display: grid; grid-template-cols: repeat(2, 1fr); gap: 20px; margin-top: 20px; }
-            .meta-item { font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; }
-            .meta-item span { color: #0f172a; display: block; font-size: 16px; margin-top: 4px; }
-            
-            table { width: 100%; border-collapse: collapse; margin-top: 30px; }
-            th { background: #f8fafc; text-align: left; padding: 12px; font-size: 10px; font-weight: 900; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; color: #475569; }
-            td { padding: 12px; font-size: 13px; border-bottom: 1px solid #f1f5f9; color: #334155; }
-            
-            .inflow { color: #16a34a; font-weight: 700; }
-            .outflow { color: #dc2626; font-weight: 700; }
-            
-            .summary-section { margin-top: 40px; border-top: 2px solid #e2e8f0; padding-top: 20px; display: grid; grid-template-cols: repeat(3, 1fr); gap: 20px; }
-            .summary-card { padding: 20px; border-radius: 16px; background: #f8fafc; border: 1px solid #e2e8f0; }
-            .summary-card h4 { margin: 0; font-size: 10px; color: #64748b; text-transform: uppercase; }
-            .summary-card p { margin: 8px 0 0; font-size: 20px; font-weight: 900; }
-            
-            @media print { body { padding: 0; } .no-print { display: none; } }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h1>Financial Statement</h1>
-            <div class="meta-grid">
-              <div class="meta-item">Project Name <span>${p.name}</span></div>
-              <div class="meta-item">Initial Investment <span>৳${p.capital.toLocaleString()}</span></div>
-              <div class="meta-item">Statement Date <span>${new Date().toLocaleDateString()}</span></div>
-              <div class="meta-item">Project Status <span>${p.status.toUpperCase()}</span></div>
+        <html>
+          <head>
+            <title>Statement - ${p.name}</title>
+            <style>
+              body { font-family: 'Segoe UI', sans-serif; padding: 40px; color: #334155; line-height: 1.6; }
+              .header { border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; margin-bottom: 30px; }
+              .grid { display: grid; grid-template-cols: 1fr 1fr; gap: 20px; }
+              .label { font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; }
+              .val { font-size: 14px; font-weight: 600; color: #1e293b; }
+              table { width: 100%; border-collapse: collapse; margin-top: 30px; }
+              th { text-align: left; padding: 12px; font-size: 11px; text-transform: uppercase; border-bottom: 2px solid #f1f5f9; color: #64748b; }
+              td { padding: 12px; font-size: 13px; border-bottom: 1px solid #f8fafc; }
+              .summary { margin-top: 30px; display: flex; gap: 20px; }
+              .card { flex: 1; padding: 20px; background: #f8fafc; border-radius: 8px; border: 1px solid #f1f5f9; }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <h2 style="margin:0; letter-spacing: -0.5px;">Investment Statement</h2>
+              <div class="grid" style="margin-top:20px;">
+                <div><div class="label">Project</div><div class="val">${
+                  p.name
+                }</div></div>
+                <div><div class="label">Capital</div><div class="val">৳${p.capital.toLocaleString()}</div></div>
+              </div>
             </div>
-          </div>
-
-          <table>
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Description</th>
-                <th>Type</th>
-                <th style="text-align: right">Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>${new Date(p.date).toLocaleDateString()}</td>
-                <td>Initial Project Capital Disbursement</td>
-                <td>INVESTMENT</td>
-                <td style="text-align: right" class="outflow">- ৳${p.capital.toLocaleString()}</td>
-              </tr>
-              ${transactions
-                .map(
-                  (t) => `
-                <tr>
-                  <td>${new Date(t.date).toLocaleDateString()}</td>
-                  <td>${t.remarks}</td>
-                  <td>${t.type.toUpperCase()}</td>
-                  <td style="text-align: right" class="${
-                    t.type === "deposit" ? "inflow" : "outflow"
-                  }">
-                    ${
-                      t.type === "deposit" ? "+" : "-"
-                    } ৳${t.amount.toLocaleString()}
-                  </td>
-                </tr>
-              `
-                )
-                .join("")}
-            </tbody>
-          </table>
-
-          <div class="summary-section">
-            <div class="summary-card">
-              <h4>Total Inflow (Profit)</h4>
-              <p class="inflow">৳${summary.totalInflow.toLocaleString()}</p>
+            <table>
+              <thead><tr><th>Date</th><th>Remarks</th><th>Type</th><th style="text-align:right">Amount</th></tr></thead>
+              <tbody>
+                ${transactions
+                  .map(
+                    (t) => `
+                  <tr>
+                    <td>${new Date(t.date).toLocaleDateString()}</td>
+                    <td>${t.remarks}</td>
+                    <td>${t.type.toUpperCase()}</td>
+                    <td style="text-align:right; font-weight:600; color: ${
+                      t.type === "deposit" ? "#16a34a" : "#dc2626"
+                    }">
+                      ${
+                        t.type === "deposit" ? "+" : "-"
+                      } ৳${t.amount.toLocaleString()}
+                    </td>
+                  </tr>
+                `
+                  )
+                  .join("")}
+              </tbody>
+            </table>
+            <div class="summary">
+              <div class="card"><div class="label">Net Yield</div><div class="val" style="font-size:18px;">৳${p.netYield.toLocaleString()}</div></div>
+              <div class="card"><div class="label">Performance (ROI)</div><div class="val" style="font-size:18px;">${
+                p.roi
+              }</div></div>
             </div>
-            <div class="summary-card">
-              <h4>Total Outflow (Exp/Inv)</h4>
-              <p class="outflow">৳${summary.totalOutflow.toLocaleString()}</p>
-            </div>
-            <div class="summary-card" style="background: #2563eb; color: white; border: none;">
-              <h4 style="color: #bfdbfe;">Net Yield</h4>
-              <p style="font-size: 24px;">৳${p.netYield.toLocaleString()}</p>
-            </div>
-          </div>
-          <script>window.onload = function() { window.print(); window.onafterprint = function() { window.close(); }; };</script>
-        </body>
-      </html>
-    `);
+            <script>window.print(); window.onafterprint = function() { window.close(); };</script>
+          </body>
+        </html>
+      `);
       printWindow.document.close();
     } catch (err) {
-      toast.error("Failed to generate printable statement");
+      toast.error("Failed to generate report");
     }
   };
 
@@ -232,15 +198,15 @@ const Investments = () => {
           dataToSend,
           config
         );
-        toast.success("Project updated successfully!");
+        toast.success("Project updated");
       } else {
         await api.post("/finance/investment", dataToSend, config);
-        toast.success("New project initiated!");
+        toast.success("Project initiated");
       }
       closeMainModal();
       refetchProjects();
     } catch (err) {
-      toast.error(err.response?.data?.message || "Operation failed");
+      toast.error("Operation failed");
     } finally {
       setIsSubmitting(false);
     }
@@ -250,11 +216,11 @@ const Investments = () => {
     setIsSubmitting(true);
     try {
       await api.delete(`/finance/investment/${selectedProject._id}`);
-      toast.success("Project deleted forever.");
+      toast.success("Project removed");
       setIsDeleteModalOpen(false);
       refetchProjects();
     } catch (err) {
-      toast.error("Failed to delete project");
+      toast.error("Delete failed");
     } finally {
       setIsSubmitting(false);
     }
@@ -264,16 +230,15 @@ const Investments = () => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      // profitData must contain { amount, type, remarks, month, year }
       await api.post(
         `/finance/investment/${selectedProject._id}/profit`,
         profitData
       );
-      toast.success("Record updated!");
+      toast.success("Ledger updated");
       setIsProfitModalOpen(false);
       refetchProjects();
     } catch (err) {
-      toast.error(err.response?.data?.message || "Entry failed");
+      toast.error("Entry failed");
     } finally {
       setIsSubmitting(false);
     }
@@ -295,107 +260,106 @@ const Investments = () => {
   if (projectsLoading || summaryLoading) return <DashboardSkeleton />;
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-6 animate-in fade-in duration-500 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-6">
         <div>
-          <h1 className="text-2xl font-black text-gray-900 tracking-tight">
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight">
             Investment Portfolio
           </h1>
-          <p className="text-sm text-gray-500 font-medium tracking-tight">
-            Dynamic asset tracking and legal document storage.
+          <p className="text-sm text-slate-500 font-medium">
+            Manage society assets and compliance documents.
           </p>
         </div>
         <Button
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 shadow-xl shadow-blue-100/50"
+          className="bg-slate-900 hover:bg-slate-800 text-white px-6 rounded-lg h-11 text-sm font-semibold"
         >
-          <Plus size={18} /> New Project
+          <Plus size={16} className="mr-2" /> New Project
         </Button>
       </div>
 
       {/* Stats Section */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-5">
-          <div className="p-4 bg-blue-50 text-blue-600 rounded-2xl">
-            <Briefcase size={28} />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {[
+          {
+            label: "Active Capital",
+            val: formatCurrency(stats.totalInvestments || 0),
+            icon: Briefcase,
+            color: "blue",
+          },
+          {
+            label: "Asset Count",
+            val: `${projects.length} Projects`,
+            icon: Activity,
+            color: "emerald",
+          },
+          {
+            label: "Compliance",
+            val: "Verified",
+            icon: FileText,
+            color: "slate",
+          },
+        ].map((item, i) => (
+          <div
+            key={i}
+            className="bg-white p-5 rounded-xl border border-slate-200 flex items-center gap-4"
+          >
+            <div
+              className={`p-3 bg-${item.color}-50 text-${item.color}-600 rounded-lg`}
+            >
+              <item.icon size={20} />
+            </div>
+            <div>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                {item.label}
+              </p>
+              <p className="text-lg font-bold text-slate-900">{item.val}</p>
+            </div>
           </div>
-          <div>
-            <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">
-              Active Capital
-            </p>
-            <p className="text-2xl font-black text-gray-900 leading-tight">
-              {formatCurrency(stats.totalInvestments || 0)}
-            </p>
-          </div>
-        </div>
-        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-5">
-          <div className="p-4 bg-green-50 text-green-600 rounded-2xl">
-            <Activity size={28} />
-          </div>
-          <div>
-            <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">
-              Growth Trend
-            </p>
-            <p className="text-2xl font-black text-gray-900 leading-tight">
-              +{projects.length} Projects
-            </p>
-          </div>
-        </div>
-        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-5">
-          <div className="p-4 bg-purple-50 text-purple-600 rounded-2xl">
-            <FileText size={28} />
-          </div>
-          <div>
-            <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">
-              Compliance
-            </p>
-            <p className="text-2xl font-black text-gray-900 leading-tight">
-              Verified
-            </p>
-          </div>
-        </div>
+        ))}
       </div>
 
       {/* Project Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {projects.map((project) => (
           <div
             key={project._id}
-            className="bg-white rounded-[2rem] border border-gray-100 shadow-sm group hover:border-blue-200 transition-all duration-500 hover:shadow-2xl hover:shadow-blue-100/30"
+            className="bg-white rounded-xl border border-slate-200 hover:border-slate-300 transition-all flex flex-col h-full"
           >
-            <div className="p-8">
-              <div className="flex justify-between items-start mb-6">
+            <div className="p-6 flex-1">
+              <div className="flex justify-between items-start mb-4">
                 <span
-                  className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                  className={`px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${
                     project.status === "active"
-                      ? "bg-green-100 text-green-700"
-                      : "bg-gray-100 text-gray-600"
+                      ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
+                      : "bg-slate-50 text-slate-600 border border-slate-100"
                   }`}
                 >
                   {project.status || "Active"}
                 </span>
-                <div className="flex gap-2">
+                <div className="flex items-center gap-1">
                   <button
                     onClick={() => fetchProjectHistory(project)}
-                    className="p-2 text-gray-400 hover:text-purple-600 transition-colors bg-gray-50 rounded-lg"
+                    className="p-2 text-slate-400 hover:text-slate-900 transition-colors"
+                    title="View Ledger"
                   >
-                    <History size={18} />
+                    <History size={16} />
                   </button>
                   <button
                     onClick={() => {
                       setSelectedProject(project);
                       setIsProfitModalOpen(true);
                     }}
-                    className="flex items-center gap-1.5 text-[10px] font-black text-blue-600 bg-blue-50 px-3 py-2 rounded-xl hover:bg-blue-100"
+                    className="px-3 py-1.5 text-[10px] font-bold text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
                   >
-                    <PlusCircle size={14} /> PROFIT/EXPENSE
+                    + PROFIT/LOSS
                   </button>
                   {isSuperAdmin && (
-                    <div className="flex gap-1.5 border-l pl-3 border-gray-100">
+                    <div className="flex items-center ml-2 border-l border-slate-100 pl-2">
                       <button
                         onClick={() => openEditModal(project)}
-                        className="p-2 text-gray-400 hover:text-blue-600 transition-colors bg-gray-50 rounded-lg"
+                        className="p-2 text-slate-400 hover:text-blue-600 transition-colors"
                       >
                         <Edit3 size={16} />
                       </button>
@@ -404,74 +368,78 @@ const Investments = () => {
                           setSelectedProject(project);
                           setIsDeleteModalOpen(true);
                         }}
-                        className="p-2 text-gray-400 hover:text-red-600 transition-colors bg-gray-50 rounded-lg"
+                        className="p-2 text-slate-400 hover:text-red-600 transition-colors"
                       >
                         <Trash2 size={16} />
                       </button>
                       <button
                         onClick={() => handlePrintReport(project)}
-                        className="p-2 text-gray-400 hover:text-green-600 transition-colors bg-gray-50 rounded-lg"
-                        title="Download Printable Report"
+                        className="p-2 text-slate-400 hover:text-emerald-600 transition-colors"
                       >
-                        <FileText size={18} />
+                        <FileText size={16} />
                       </button>
                     </div>
                   )}
                 </div>
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">
+
+              <h3 className="text-lg font-bold text-slate-900 mb-1">
                 {project.projectName}
               </h3>
-              <div className="flex items-center gap-4 mb-6">
+              <p className="text-xs text-slate-500 font-medium mb-4 line-clamp-1">
+                {project.remarks || "No additional details provided."}
+              </p>
+
+              <div className="flex items-center gap-3 mb-6">
                 {project.legalDocs ? (
                   <a
                     href={`${STATIC_URL}/${project.legalDocs}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-xs text-blue-600 font-bold border border-blue-600 px-4 py-2 rounded-xl hover:bg-blue-600 hover:text-white transition-all"
+                    className="flex items-center gap-2 text-[11px] text-blue-600 font-bold bg-blue-50 px-3 py-1.5 rounded hover:bg-blue-100 transition-colors"
                   >
-                    <FileText size={14} /> View Docs <ExternalLink size={12} />
+                    <FileText size={14} /> View Documents
                   </a>
                 ) : (
-                  <div className="text-xs text-gray-400 font-bold bg-gray-50 px-4 py-2 rounded-xl border border-gray-200">
+                  <span className="text-[11px] text-slate-400 font-semibold bg-slate-50 px-3 py-1.5 rounded border border-slate-100">
                     No Docs Attached
-                  </div>
+                  </span>
                 )}
               </div>
-              <div className="grid grid-cols-2 gap-6 bg-gray-50/50 p-6 rounded-3xl border border-gray-100">
-                <div className="space-y-1">
-                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-                    Capital
+
+              <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-lg">
+                <div>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">
+                    Project Capital
                   </p>
-                  <p className="text-xl font-black text-gray-900">
+                  <p className="text-base font-bold text-slate-900">
                     {formatCurrency(project.amount)}
                   </p>
                 </div>
-                <div className="space-y-1">
-                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                <div>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">
                     Net Yield
                   </p>
                   <p
-                    className={`text-xl font-black ${
+                    className={`text-base font-bold ${
                       project.totalProfit >= 0
-                        ? "text-green-600"
+                        ? "text-emerald-600"
                         : "text-red-600"
                     }`}
                   >
-                    {/* Remove the hardcoded '+' and let formatCurrency handle the value */}
                     {project.totalProfit >= 0 ? "+" : ""}
                     {formatCurrency(project.totalProfit || 0)}
                   </p>
                 </div>
               </div>
             </div>
-            <div className="px-8 py-5 bg-gray-50/80 flex items-center justify-between border-t border-gray-50">
-              <div className="text-xs text-gray-500 font-black uppercase tracking-tighter">
+            <div className="px-6 py-3 bg-slate-50/50 border-t border-slate-100 flex justify-between items-center">
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
                 Launched: {formatDate(project.date)}
-              </div>
-              <div className="text-xs text-gray-500 font-black uppercase tracking-tighter">
-                ID: {project._id.slice(-6).toUpperCase()}
-              </div>
+              </span>
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                UID: {project._id.slice(-8).toUpperCase()}
+              </span>
             </div>
           </div>
         ))}
@@ -479,73 +447,68 @@ const Investments = () => {
 
       {/* Main Modal (Add/Edit) */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
-          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in">
-            <div className="flex items-center justify-between p-10 border-b">
-              <div>
-                <h2 className="text-3xl font-black text-gray-900">
-                  {isEditing ? "Edit Project" : "Initiate Project"}
-                </h2>
-                <p className="text-sm text-gray-500">
-                  Document capital and legal details.
-                </p>
-              </div>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-xl overflow-hidden">
+            <div className="flex items-center justify-between px-8 py-6 border-b border-slate-100 bg-slate-50/30">
+              <h2 className="text-lg font-bold text-slate-900">
+                {isEditing ? "Modify Project" : "New Investment"}
+              </h2>
               <button
                 onClick={closeMainModal}
-                className="p-3 bg-gray-50 hover:bg-gray-100 rounded-full"
+                className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 transition-colors"
               >
-                <X size={24} />
+                <X size={20} />
               </button>
             </div>
             <form
               onSubmit={handleAddOrUpdate}
-              className="p-10 space-y-8 max-h-[70vh] overflow-y-auto"
+              className="p-8 space-y-5 max-h-[75vh] overflow-y-auto"
             >
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700 ml-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
                     Project Name
                   </label>
                   <input
                     required
-                    className="w-full px-6 py-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium outline-none focus:border-blue-500 transition-colors"
                     value={formData.projectName}
                     onChange={(e) =>
                       setFormData({ ...formData, projectName: e.target.value })
                     }
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700 ml-1">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
                     Capital Amount
                   </label>
                   <input
                     required
                     type="number"
-                    className="w-full px-6 py-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium outline-none focus:border-blue-500 transition-colors"
                     value={formData.amount}
                     onChange={(e) =>
                       setFormData({ ...formData, amount: e.target.value })
                     }
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700 ml-1">
-                    Date
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                    Launch Date
                   </label>
                   <input
                     required
                     type="date"
-                    className="w-full px-6 py-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium outline-none focus:border-blue-500 transition-colors"
                     value={formData.date}
                     onChange={(e) =>
                       setFormData({ ...formData, date: e.target.value })
                     }
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700 ml-1">
-                    Legal Docs
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                    Legal Documents
                   </label>
                   <div className="relative">
                     <input
@@ -561,48 +524,48 @@ const Investments = () => {
                     />
                     <label
                       htmlFor="docs"
-                      className="flex items-center gap-3 px-6 py-4 bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl cursor-pointer text-gray-500 text-sm font-bold"
+                      className="flex items-center gap-3 px-4 py-2.5 bg-slate-50 border border-dashed border-slate-300 rounded-lg cursor-pointer text-slate-400 text-xs font-semibold hover:border-blue-400 transition-colors"
                     >
-                      <UploadCloud size={20} className="text-blue-600" />{" "}
+                      <UploadCloud size={18} className="text-blue-500" />
                       {formData.legalDocs instanceof File
                         ? formData.legalDocs.name
-                        : "Attach New PDF/Image"}
+                        : "Attach PDF/Image"}
                     </label>
                   </div>
                 </div>
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-700 ml-1">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
                   Remarks
                 </label>
                 <textarea
-                  rows={4}
-                  className="w-full px-6 py-5 bg-gray-50 border border-gray-200 rounded-2xl outline-none text-sm font-medium"
+                  rows={3}
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium outline-none focus:border-blue-500 transition-colors"
                   value={formData.remarks}
                   onChange={(e) =>
                     setFormData({ ...formData, remarks: e.target.value })
                   }
                 />
               </div>
-              <div className="pt-6 flex gap-5 sticky bottom-0 bg-white">
+              <div className="pt-4 flex gap-3">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={closeMainModal}
-                  className="flex-1 py-4 font-black"
+                  className="flex-1 py-3 text-sm font-bold border-slate-200 text-slate-600"
                 >
                   Cancel
                 </Button>
                 <Button
                   disabled={isSubmitting}
                   type="submit"
-                  className="flex-1 py-4 font-black shadow-2xl shadow-blue-500/20"
+                  className="flex-1 py-3 text-sm font-bold bg-slate-900 text-white hover:bg-slate-800"
                 >
                   {isSubmitting
                     ? "Processing..."
                     : isEditing
-                    ? "Update Project"
-                    : "Finalize Project"}
+                    ? "Save Changes"
+                    : "Create Project"}
                 </Button>
               </div>
             </form>
@@ -612,85 +575,81 @@ const Investments = () => {
 
       {/* History Ledger Modal */}
       {isHistoryModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in duration-300">
-            <div className="p-8 border-b flex justify-between items-center bg-gray-50/50">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-xl overflow-hidden">
+            <div className="px-8 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
               <div>
-                <h2 className="text-xl font-black text-gray-900 tracking-tight">
-                  Investment Ledger
+                <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+                  Project Ledger
                 </h2>
-                <p className="text-xs text-gray-500 font-bold uppercase">
+                <p className="text-[10px] text-slate-500 font-bold uppercase">
                   {selectedProject?.projectName}
                 </p>
               </div>
               <button
                 onClick={() => setIsHistoryModalOpen(false)}
-                className="p-2 hover:bg-gray-200 rounded-full transition-colors"
+                className="p-2 hover:bg-slate-200 rounded-lg transition-colors text-slate-400"
               >
-                <X size={20} />
+                <X size={18} />
               </button>
             </div>
-            <div className="p-8 max-h-[60vh] overflow-y-auto">
+            <div className="p-6 max-h-[60vh] overflow-y-auto space-y-3">
               {historyLoading ? (
                 <div className="flex justify-center py-10">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  <RefreshCw className="animate-spin text-blue-500" size={24} />
                 </div>
               ) : projectHistory.length === 0 ? (
-                <div className="text-center py-10 text-gray-400 font-medium">
-                  No transactions recorded for this project yet.
+                <div className="text-center py-10 text-slate-400 text-xs font-bold uppercase tracking-widest italic">
+                  No entries found
                 </div>
               ) : (
-                <div className="space-y-4">
-                  {projectHistory.map((trx, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center justify-between p-4 rounded-2xl border border-gray-50 bg-gray-50/30"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div
-                          className={`p-2 rounded-xl ${
-                            trx.category === "investment_profit"
-                              ? "bg-green-100 text-green-600"
-                              : trx.type === "expense"
-                              ? "bg-red-100 text-red-600"
-                              : "bg-blue-100 text-blue-600"
-                          }`}
-                        >
-                          {trx.category === "investment_profit" ? (
-                            <ArrowUpRight size={18} />
-                          ) : trx.type === "expense" ? (
-                            <ArrowDownRight size={18} />
-                          ) : (
-                            <Coins size={18} />
-                          )}
-                        </div>
-                        <div>
-                          <p className="text-sm font-bold text-gray-800">
-                            {trx.remarks}
-                          </p>
-                          <p className="text-[10px] text-gray-400 font-bold uppercase">
-                            {formatDate(trx.date)}
-                          </p>
-                        </div>
+                projectHistory.map((trx, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between p-4 rounded-lg border border-slate-100 bg-slate-50/50"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`p-2 rounded ${
+                          trx.category === "investment_profit"
+                            ? "bg-emerald-50 text-emerald-600"
+                            : trx.type === "expense"
+                            ? "bg-red-50 text-red-600"
+                            : "bg-blue-50 text-blue-600"
+                        }`}
+                      >
+                        {trx.type === "deposit" ? (
+                          <ArrowUpRight size={16} />
+                        ) : (
+                          <ArrowDownRight size={16} />
+                        )}
                       </div>
-                      <div className="text-right">
-                        <p
-                          className={`text-sm font-black ${
-                            trx.type === "deposit"
-                              ? "text-green-600"
-                              : "text-red-600"
-                          }`}
-                        >
-                          {trx.type === "deposit" ? "+" : "-"}
-                          {formatCurrency(trx.amount)}
+                      <div>
+                        <p className="text-xs font-bold text-slate-700">
+                          {trx.remarks}
                         </p>
-                        <p className="text-[10px] text-gray-400 font-bold uppercase">
-                          {trx.category.replace(/_/g, " ")}
+                        <p className="text-[9px] text-slate-400 font-bold uppercase">
+                          {formatDate(trx.date)}
                         </p>
                       </div>
                     </div>
-                  ))}
-                </div>
+                    <div className="text-right">
+                      <p
+                        className={`text-xs font-bold ${
+                          trx.type === "deposit"
+                            ? "text-emerald-600"
+                            : "text-red-600"
+                        }`}
+                      >
+                        {trx.type === "deposit" ? "+" : "-"}
+                        {formatCurrency(trx.amount)}
+                      </p>
+                      <p className="text-[9px] text-slate-400 font-bold uppercase">
+                        {trx.category.replace(/_/g, " ")}
+                      </p>
+                    </div>
+                  </div>
+                ))
               )}
             </div>
           </div>
@@ -699,100 +658,99 @@ const Investments = () => {
 
       {/* Delete Modal */}
       {isDeleteModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in">
-            <div className="p-10 text-center">
-              <div className="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
-                <AlertTriangle size={40} />
-              </div>
-              <h2 className="text-2xl font-black text-gray-900 mb-2">
-                Delete Project?
-              </h2>
-              <p className="text-sm text-gray-500 mb-8">
-                This action permanently removes all documents and financial
-                history. This cannot be undone.
-              </p>
-              <div className="flex gap-4">
-                <button
-                  onClick={() => setIsDeleteModalOpen(false)}
-                  className="flex-1 py-4 bg-gray-100 text-gray-600 font-bold rounded-2xl"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleDelete}
-                  disabled={isSubmitting}
-                  className="flex-1 py-4 bg-red-600 text-white font-black rounded-2xl shadow-lg shadow-red-200"
-                >
-                  {isSubmitting ? "Deleting..." : "Confirm Delete"}
-                </button>
-              </div>
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden p-8 text-center">
+            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertTriangle size={32} />
+            </div>
+            <h2 className="text-lg font-bold text-slate-900 mb-2">
+              Delete Project?
+            </h2>
+            <p className="text-xs text-slate-500 font-medium mb-8 leading-relaxed">
+              This action permanently removes all documents and financial
+              history. This cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="flex-1 py-3 bg-slate-100 text-slate-600 font-bold rounded-lg text-xs transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={isSubmitting}
+                className="flex-1 py-3 bg-red-600 text-white font-bold rounded-lg text-xs shadow-md shadow-red-200 hover:bg-red-700 transition-colors"
+              >
+                {isSubmitting ? "Deleting..." : "Confirm Delete"}
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Profit Entry Modal */}
+      {/* Profit/Expense Entry Modal */}
       {isProfitModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
-          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in">
-            <div className="p-10 border-b bg-gray-50/50">
-              <h2 className="text-2xl font-black text-gray-900 leading-tight">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="px-8 py-5 border-b border-slate-100 bg-slate-50/30">
+              <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
                 Financial Entry
               </h2>
-              <p className="text-xs text-gray-400 font-black uppercase tracking-widest mt-1">
+              <p className="text-[10px] text-slate-500 font-bold uppercase mt-0.5">
                 {selectedProject?.projectName}
               </p>
             </div>
-            <form onSubmit={handleProfitSubmit} className="p-10 space-y-8">
-              <div className="flex p-2 bg-gray-100 rounded-2xl">
+            <form onSubmit={handleProfitSubmit} className="p-8 space-y-6">
+              <div className="flex p-1 bg-slate-100 rounded-lg">
                 <button
                   type="button"
                   onClick={() =>
                     setProfitData({ ...profitData, type: "deposit" })
                   }
-                  className={`flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl text-xs font-black transition-all ${
+                  className={`flex-1 py-2 rounded-md text-[10px] font-bold transition-all ${
                     profitData.type === "deposit"
-                      ? "bg-white text-green-600 shadow-xl"
-                      : "text-gray-500"
+                      ? "bg-white text-emerald-600 shadow-sm"
+                      : "text-slate-500"
                   }`}
                 >
-                  <PlusCircle size={16} /> PROFIT
+                  PROFIT
                 </button>
                 <button
                   type="button"
                   onClick={() =>
                     setProfitData({ ...profitData, type: "expense" })
                   }
-                  className={`flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl text-xs font-black transition-all ${
+                  className={`flex-1 py-2 rounded-md text-[10px] font-bold transition-all ${
                     profitData.type === "expense"
-                      ? "bg-white text-red-600 shadow-xl"
-                      : "text-gray-500"
+                      ? "bg-white text-red-600 shadow-sm"
+                      : "text-slate-500"
                   }`}
                 >
-                  <MinusCircle size={16} /> EXPENSE
+                  EXPENSE
                 </button>
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-700 ml-1">
-                  Amount
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  Transaction Amount
                 </label>
                 <input
                   required
                   type="number"
-                  className="w-full px-6 py-5 bg-gray-50 border border-gray-200 rounded-2xl font-black text-2xl text-blue-600 outline-none"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-xl font-bold text-slate-900 outline-none focus:border-blue-500 transition-colors"
                   value={profitData.amount}
                   onChange={(e) =>
                     setProfitData({ ...profitData, amount: e.target.value })
                   }
                 />
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-700 ml-1">
-                  Remarks
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  Audit Remarks
                 </label>
                 <textarea
-                  className="w-full px-6 py-4 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-medium outline-none"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium outline-none"
+                  rows={3}
                   placeholder="Description..."
                   value={profitData.remarks}
                   onChange={(e) =>
@@ -800,25 +758,25 @@ const Investments = () => {
                   }
                 />
               </div>
-              <div className="pt-4 flex gap-5">
+              <div className="flex gap-3 pt-2">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => setIsProfitModalOpen(false)}
-                  className="flex-1 py-4 font-black"
+                  className="flex-1 py-3 text-xs font-bold border-slate-200 text-slate-500"
                 >
                   Cancel
                 </Button>
                 <button
                   disabled={isSubmitting}
                   type="submit"
-                  className={`flex-1 py-4 font-black rounded-2xl shadow-lg transition-colors ${
+                  className={`flex-1 py-3 font-bold rounded-lg text-xs text-white transition-colors ${
                     profitData.type === "deposit"
-                      ? "bg-green-600 hover:bg-green-700 text-white shadow-green-200"
-                      : "bg-red-600 hover:bg-red-700 text-white shadow-red-200"
+                      ? "bg-emerald-600 hover:bg-emerald-700"
+                      : "bg-red-600 hover:bg-red-700"
                   }`}
                 >
-                  {isSubmitting ? "Updating..." : "Confirm"}
+                  {isSubmitting ? "Syncing..." : "Confirm Entry"}
                 </button>
               </div>
             </form>

@@ -59,7 +59,6 @@ const MemberList = () => {
     });
   }, [rawData, debouncedSearch, selectedBranch]);
 
-  // FIX: Professional Print Handler
   const handlePrint = () => {
     window.print();
   };
@@ -133,67 +132,60 @@ const MemberList = () => {
   if (loading) return <DashboardSkeleton />;
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in duration-700">
+    <div className="max-w-7xl mx-auto space-y-6 animate-in fade-in duration-500">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 no-print">
-        <div className="space-y-1">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-blue-600 rounded-2xl shadow-xl shadow-blue-200 text-white">
-              <Users size={28} />
-            </div>
-            <h1 className="text-3xl font-black text-gray-900 tracking-tight">
-              Member Directory
-            </h1>
-          </div>
-          <p className="text-gray-500 font-medium ml-1">
-            Displaying{" "}
-            <span className="text-blue-600 font-bold">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-6 no-print">
+        <div>
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+            Member Directory
+          </h1>
+          <p className="text-sm text-slate-500 font-medium">
+            Manage{" "}
+            <span className="font-bold text-slate-700">
               {filteredMembers.length}
             </span>{" "}
-            active society members
+            active society members and their profiles.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <button
             onClick={handlePrint}
-            className="flex items-center gap-2 px-6 py-3 bg-white border border-gray-200 rounded-2xl hover:bg-gray-50 transition-all text-sm font-black text-gray-700 shadow-sm active:scale-95"
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-all text-xs font-bold text-slate-600 active:scale-95"
           >
-            <Printer size={18} className="text-blue-600" />
-            Print Report
+            <Printer size={16} /> Print Directory
           </button>
           <button
             onClick={() => handleOpenModal()}
-            className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-2xl shadow-xl shadow-blue-500/30 font-black text-sm hover:bg-blue-700 transition-all active:scale-95"
+            className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg font-bold text-xs hover:bg-slate-800 transition-all active:scale-95 shadow-sm"
           >
-            <UserPlus size={18} />
-            Add Member
+            <UserPlus size={16} /> Add New Member
           </button>
         </div>
       </div>
 
       {/* Filter Stats Bar */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 no-print">
-        <div className="md:col-span-2 relative">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 no-print">
+        <div className="lg:col-span-2 relative">
           <Search
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-            size={20}
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+            size={18}
           />
           <input
             type="text"
             placeholder="Search by Name, NID, or Phone..."
-            className="w-full pl-12 pr-4 py-4 bg-white border-0 ring-1 ring-gray-200 rounded-[20px] focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-sm font-medium"
+            className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:border-slate-400 focus:ring-0 outline-none transition-all text-sm font-medium"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
         <div className="relative">
           <Filter
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-            size={18}
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+            size={16}
           />
           <select
-            className="w-full pl-11 pr-4 py-4 bg-white border-0 ring-1 ring-gray-200 rounded-[20px] outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-sm font-bold text-gray-700 appearance-none"
+            className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg outline-none focus:border-slate-400 transition-all text-sm font-bold text-slate-700 appearance-none"
             value={selectedBranch}
             onChange={(e) => setSelectedBranch(e.target.value)}
           >
@@ -205,115 +197,117 @@ const MemberList = () => {
             ))}
           </select>
         </div>
-        <div className="bg-blue-50 border border-blue-100 rounded-[20px] p-4 flex items-center justify-between">
-          <span className="text-xs font-black text-blue-600 uppercase tracking-wider">
-            Active Shares
+        <div className="bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 flex items-center justify-between">
+          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+            Total Shares
           </span>
-          <span className="text-xl font-black text-blue-700">
+          <span className="text-base font-bold text-slate-900">
             {filteredMembers.reduce((acc, m) => acc + (m.shares || 0), 0)}
           </span>
         </div>
       </div>
 
       {/* Main Table Card */}
-      <div className="bg-white rounded-[32px] border border-gray-100 shadow-2xl shadow-gray-200/50 overflow-hidden print:shadow-none print:border-none">
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden print:shadow-none print:border-none">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-gray-50/50">
-                <th className="px-8 py-5 text-[11px] font-black text-gray-400 uppercase tracking-widest">
-                  Member Information
+              <tr className="bg-slate-50/50 border-b border-slate-100">
+                <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                  Profile Information
                 </th>
-                <th className="px-6 py-5 text-[11px] font-black text-gray-400 uppercase tracking-widest">
+                <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">
                   Branch
                 </th>
-                <th className="px-6 py-5 text-[11px] font-black text-gray-400 uppercase tracking-widest text-center">
+                <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">
                   Shares
                 </th>
-                <th className="px-6 py-5 text-[11px] font-black text-gray-400 uppercase tracking-widest text-right">
-                  Ledger Balance
+                <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">
+                  Total Contributed
                 </th>
-                <th className="px-8 py-5 text-[11px] font-black text-gray-400 uppercase tracking-widest text-right no-print">
+                <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right no-print">
                   Management
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-slate-50">
               {filteredMembers.map((m) => (
                 <tr
                   key={m._id}
-                  className="hover:bg-blue-50/30 transition-all group"
+                  className="hover:bg-slate-50/50 transition-colors group"
                 >
-                  <td className="px-8 py-5">
-                    <div className="flex items-center gap-4">
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
                       <div
-                        className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 ${
+                        className={`w-9 h-9 rounded-lg flex items-center justify-center ${
                           m.status === "active"
-                            ? "bg-green-50 text-green-600"
-                            : "bg-gray-50 text-gray-400"
+                            ? "bg-emerald-50 text-emerald-600"
+                            : "bg-slate-100 text-slate-400"
                         }`}
                       >
                         {m.status === "active" ? (
-                          <UserCheck size={22} />
+                          <UserCheck size={18} />
                         ) : (
-                          <UserMinus size={22} />
+                          <UserMinus size={18} />
                         )}
                       </div>
                       <div>
-                        <div className="font-black text-gray-900 text-base flex items-center gap-2">
+                        <div className="font-bold text-slate-900 text-sm flex items-center gap-2">
                           {m.name}
                           {m.status === "active" && (
-                            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                            <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
                           )}
                         </div>
-                        <div className="flex flex-col space-y-0.5 mt-1">
-                          <span className="text-[11px] font-bold text-blue-600 flex items-center gap-1">
+                        <div className="flex items-center gap-3 mt-0.5">
+                          <span className="text-[11px] font-medium text-slate-500">
                             📞 {m.phone}
                           </span>
-                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter flex items-center gap-1">
-                            <CreditCard size={12} /> ID: {m.nid}
+                          <span className="text-[11px] font-medium text-slate-400 uppercase">
+                            NID: {m.nid}
                           </span>
                         </div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-5">
-                    <span className="text-xs font-black text-gray-600 bg-gray-100 px-3 py-1.5 rounded-xl uppercase tracking-wider">
+                  <td className="px-6 py-4 text-center">
+                    <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded uppercase tracking-wider">
                       {m.branch}
                     </span>
                   </td>
-                  <td className="px-6 py-5 text-center">
-                    <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-blue-600 text-white font-black text-sm shadow-lg shadow-blue-200">
+                  <td className="px-6 py-4 text-center">
+                    <span className="text-sm font-bold text-slate-700">
                       {m.shares || 1}
-                    </div>
+                    </span>
                   </td>
-                  <td className="px-6 py-5 text-right font-black text-gray-900 text-lg tracking-tight">
-                    {formatCurrency(m.totalDeposited || 0)}
+                  <td className="px-6 py-4 text-right">
+                    <span className="text-sm font-bold text-slate-900">
+                      {formatCurrency(m.totalDeposited || 0)}
+                    </span>
                   </td>
-                  <td className="px-8 py-5 text-right no-print">
-                    <div className="flex justify-end items-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                  <td className="px-6 py-4 text-right no-print">
+                    <div className="flex justify-end items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
                       <button
                         onClick={() => handleOpenModal(m)}
-                        className="p-3 text-blue-600 hover:bg-blue-100 rounded-xl transition-all"
-                        title="Edit Profile"
+                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                        title="Edit"
                       >
-                        <Edit3 size={18} />
+                        <Edit3 size={16} />
                       </button>
                       {isSuperAdmin && (
                         <button
                           onClick={() => handleDelete(m._id)}
-                          className="p-3 text-red-600 hover:bg-red-100 rounded-xl transition-all"
-                          title="Delete Member"
+                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                          title="Delete"
                         >
-                          <Trash2 size={18} />
+                          <Trash2 size={16} />
                         </button>
                       )}
                       <Link
                         to={`/admin/members/${m._id}`}
-                        className="p-3 text-gray-400 hover:text-blue-600 transition-all"
-                        title="View Full Profile"
+                        className="p-2 text-slate-400 hover:text-slate-900 transition-all"
+                        title="View Details"
                       >
-                        <ChevronRight size={22} />
+                        <ChevronRight size={18} />
                       </Link>
                     </div>
                   </td>

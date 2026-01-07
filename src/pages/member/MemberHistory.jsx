@@ -1,5 +1,14 @@
-import React from "react";
-import { Download, History, TrendingUp, Calendar } from "lucide-react";
+import React, { useMemo } from "react";
+import {
+  Download,
+  History,
+  TrendingUp,
+  Calendar,
+  ArrowUpRight,
+  CreditCard,
+  RefreshCw,
+  AlertCircle,
+} from "lucide-react";
 import { useFetch } from "../../hooks/useFetch";
 import { useAuthStore } from "../../store/useAuthStore";
 import { formatCurrency, formatDate } from "../../utils/formatters";
@@ -7,153 +16,219 @@ import { downloadFile } from "../../utils/pdfDownload";
 import api from "../../services/api";
 import DashboardSkeleton from "../../components/skeleton/DashboardSkeleton";
 import Button from "../../components/ui/Button";
+import toast from "react-hot-toast";
 
 const MemberHistory = () => {
   const user = useAuthStore((state) => state.user);
 
-  // 1. Fetch personal transactions for the logged-in user
-  const {
-    data: transactions,
-    loading,
-    error,
-  } = useFetch(`/finance/history/${user._id}`);
+  /**
+   * 🛠️ LOGIC FIX:
+   * Uses user.id (normalized from backend) to fetch transaction history.
+   * Path matches backend: router.get("/history/:id", protect, getMemberHistory);
+   */
+  const { data, loading, error, refetch } = useFetch(
+    user?.id ? `/finance/history/${user.id}` : null
+  );
+
+  /**
+   * 📊 DATA NORMALIZATION:
+   * Handles both { success: true, data: [...] } and direct array returns.
+   */
+  const transactions = useMemo(() => {
+    const raw = data?.data || data;
+    return Array.isArray(raw) ? raw : [];
+  }, [data]);
+
+  const stats = useMemo(() => {
+    const totalSavings = transactions.reduce(
+      (sum, t) => sum + (t.amount || 0),
+      0
+    );
+    return {
+      totalSavings,
+      recordCount: transactions.length,
+      // FIX: Changed from user?.createdAt to user?.joiningDate
+      activeSince: user?.joiningDate ? formatDate(user.joiningDate) : "N/A",
+    };
+  }, [transactions, user]);
 
   const handleDownloadPDF = async () => {
+    if (!user?.id) return toast.error("User session not found.");
+
+    const loadingToast = toast.loading("Generating personal statement...");
     try {
-      const response = await api.get(`/finance/statement/${user._id}`, {
+      // FIX: Use user.id to match the authenticated user ID
+      const response = await api.get(`/finance/statement/${user.id}`, {
         responseType: "blob",
       });
       downloadFile(response, `Statement_${user.name.replace(/\s+/g, "_")}.pdf`);
+      toast.success("Statement exported", { id: loadingToast });
     } catch (err) {
-      alert("Could not generate PDF. Please try again later.");
+      toast.error("Generation failed. Contact society admin.", {
+        id: loadingToast,
+      });
     }
   };
 
   if (loading) return <DashboardSkeleton />;
 
   return (
-    <div className="space-y-6">
-      {/* --- Personal Summary Header --- */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
+      {/* --- Minimalist Header --- */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-100 pb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            My Financial History
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+            Personal Transaction History
           </h1>
-          <p className="text-gray-500 text-sm">
-            Review your deposits and society contributions.
+          <p className="text-sm text-slate-500 font-medium tracking-tight">
+            Verified registry of your contributions and savings.
           </p>
         </div>
-        <Button
-          onClick={handleDownloadPDF}
-          variant="outline"
-          className="flex items-center gap-2"
-        >
-          <Download size={18} /> Download Statement
-        </Button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => refetch()}
+            className="p-2 text-slate-400 hover:text-blue-600 transition-colors bg-white border border-slate-200 rounded-lg"
+          >
+            <RefreshCw size={16} />
+          </button>
+          <Button
+            onClick={handleDownloadPDF}
+            variant="outline"
+            className="flex items-center gap-2 border-slate-200 text-slate-600 hover:bg-slate-50 transition-all text-xs font-bold uppercase tracking-widest px-4 h-10"
+          >
+            <Download size={16} /> Export PDF
+          </Button>
+        </div>
       </div>
 
-      {/* --- Quick Stats Cards --- */}
+      {/* --- Error Fallback --- */}
+      {error && (
+        <div className="p-4 bg-red-50 border border-red-100 rounded-xl flex items-center gap-3 text-red-600 text-sm font-medium">
+          <AlertCircle size={18} />
+          <span>Error loading ledger: {error}</span>
+        </div>
+      )}
+
+      {/* --- KPI Stats Grid --- */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4">
-          <div className="p-3 bg-green-50 text-green-600 rounded-lg">
-            <TrendingUp size={24} />
+        {[
+          {
+            label: "Consolidated Savings",
+            val: formatCurrency(stats.totalSavings),
+            icon: TrendingUp,
+            color: "emerald",
+          },
+          {
+            label: "Deposit Records",
+            val: `${stats.recordCount} Entries`,
+            icon: History,
+            color: "blue",
+          },
+          {
+            label: "Membership Active",
+            val: stats.activeSince,
+            icon: Calendar,
+            color: "slate",
+          },
+        ].map((item, i) => (
+          <div
+            key={i}
+            className="bg-white p-5 rounded-xl border border-slate-200 flex items-center gap-4 shadow-sm"
+          >
+            <div
+              className={`p-3 bg-${item.color}-50 text-${item.color}-600 rounded-lg border border-${item.color}-100`}
+            >
+              <item.icon size={20} />
+            </div>
+            <div>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-0.5">
+                {item.label}
+              </p>
+              <p className="text-lg font-bold text-slate-900 leading-none">
+                {item.val}
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="text-xs text-gray-500 font-bold uppercase">
-              Total Savings
-            </p>
-            <p className="text-xl font-bold text-gray-900">
-              {formatCurrency(
-                transactions?.reduce((sum, t) => sum + t.amount, 0) || 0
-              )}
-            </p>
-          </div>
-        </div>
-        <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4">
-          <div className="p-3 bg-blue-50 text-blue-600 rounded-lg">
-            <History size={24} />
-          </div>
-          <div>
-            <p className="text-xs text-gray-500 font-bold uppercase">
-              Total Deposits
-            </p>
-            <p className="text-xl font-bold text-gray-900">
-              {transactions?.length || 0} Records
-            </p>
-          </div>
-        </div>
-        <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4">
-          <div className="p-3 bg-purple-50 text-purple-600 rounded-lg">
-            <Calendar size={24} />
-          </div>
-          <div>
-            <p className="text-xs text-gray-500 font-bold uppercase">
-              Active Since
-            </p>
-            <p className="text-xl font-bold text-gray-900">
-              {formatDate(user?.createdAt)}
-            </p>
-          </div>
-        </div>
+        ))}
       </div>
 
       {/* --- Transaction Table --- */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead className="bg-gray-50 border-b border-gray-100">
-              <tr>
-                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50/50 border-b border-slate-100">
+                <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
                   Date
                 </th>
-                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase">
-                  Description
+                <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                  Detail & Category
                 </th>
-                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase">
+                <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
                   Method
                 </th>
-                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase text-right">
-                  Amount
+                <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">
+                  Value (৳)
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
-              {transactions?.length > 0 ? (
+            <tbody className="divide-y divide-slate-50">
+              {transactions.length > 0 ? (
                 transactions.map((t) => (
                   <tr
                     key={t._id}
-                    className="hover:bg-gray-50 transition-colors"
+                    className="hover:bg-slate-50/50 transition-colors group"
                   >
-                    <td className="px-6 py-4 text-sm text-gray-600">
+                    <td className="px-6 py-4 text-sm text-slate-500 font-medium">
                       {formatDate(t.date)}
                     </td>
                     <td className="px-6 py-4">
-                      <p className="text-sm font-medium text-gray-900">
-                        {t.remarks || "Monthly Deposit"}
-                      </p>
-                      <p className="text-[10px] text-blue-500 font-bold uppercase">
-                        {t.category}
-                      </p>
+                      <div className="flex items-start gap-3">
+                        <div className="mt-0.5 p-1.5 bg-emerald-50 text-emerald-600 rounded">
+                          <ArrowUpRight size={14} />
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-slate-700 leading-tight">
+                            {t.remarks || "Society Contribution Entry"}
+                          </p>
+                          <span className="inline-block mt-1 px-2 py-0.5 bg-slate-100 text-slate-500 text-[9px] font-bold rounded uppercase tracking-wider border border-slate-200">
+                            {t.category?.replace(/_/g, " ")}
+                          </span>
+                        </div>
+                      </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded">
-                        Auto-Debit
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <CreditCard size={14} className="text-slate-400" />
+                        <span className="text-[10px] font-bold text-slate-500 uppercase">
+                          {t.category === "monthly_deposit"
+                            ? "Payroll Sync"
+                            : "Manual Post"}
+                        </span>
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <span className="text-sm font-bold text-gray-900">
-                        {formatCurrency(t.amount)}
+                      <span className="text-sm font-bold text-emerald-600">
+                        +{formatCurrency(t.amount)}
                       </span>
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td
-                    colSpan="4"
-                    className="px-6 py-12 text-center text-gray-400"
-                  >
-                    No transactions found in your history.
+                  <td colSpan="4" className="px-6 py-24 text-center">
+                    <div className="flex flex-col items-center opacity-40">
+                      <History className="text-slate-300 mb-4" size={48} />
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] italic">
+                        No financial activity found in this account
+                      </p>
+                      <button
+                        onClick={() => refetch()}
+                        className="mt-4 text-[10px] font-black text-blue-600 uppercase border-b border-blue-600 pb-0.5"
+                      >
+                        Force Refresh Sync
+                      </button>
+                    </div>
                   </td>
                 </tr>
               )}

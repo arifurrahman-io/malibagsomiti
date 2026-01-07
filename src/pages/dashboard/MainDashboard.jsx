@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
   TrendingUp,
@@ -16,6 +16,7 @@ import {
   Layers,
   ArrowUpCircle,
   Zap,
+  RefreshCw,
 } from "lucide-react";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useFetch } from "../../hooks/useFetch";
@@ -28,73 +29,77 @@ const MainDashboard = () => {
   const isAdmin = user?.role === "admin" || user?.role === "super-admin";
 
   /**
-   * 1. STRICTOR ENDPOINT SELECTION
-   * Routes to the correct summary based on user privileges.
+   * 1. DYNAMIC ENDPOINT SELECTION
+   * Admins fetch global statistics, while members fetch their personal summary.
    */
   const endpoint = isAdmin ? "/finance/summary" : "/finance/member-summary";
-  const { data, loading } = useFetch(endpoint);
+  const { data, loading, error } = useFetch(endpoint);
 
   /**
-   * 2. PROFESSIONAL DATA NORMALIZATION
-   * Handles string-based month names and dynamic financial stats.
+   * 2. DATA NORMALIZATION
+   * Normalizes the response to ensure members see their personal 'bankBalance'
+   * and 'recentTransactions' linked specifically to their account.
    */
   const stats = useMemo(() => {
     const rawData = data?.data || data || {};
     return {
       totalMembers: rawData.totalMembers || 0,
-      totalCollection: rawData.totalCollection || rawData.bankBalance || 0,
+      // For Admins: Global Society Fund | For Members: Personal Bank Balance
+      totalCollection: isAdmin
+        ? rawData.totalCollection || 0
+        : rawData.bankBalance || 0,
       totalInvestments: rawData.totalInvestments || 0,
       collectionTrend: rawData.collectionTrend || [],
+      // For Members, the backend already filters this array to only include their data
       recentTransactions: rawData.recentTransactions || [],
+      memberSince: user?.joiningDate ? formatDate(user.joiningDate) : "N/A",
     };
-  }, [data]);
+  }, [data, isAdmin, user]);
 
   if (loading) return <DashboardSkeleton />;
 
   return (
-    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-6 duration-1000">
-      {/* --- PREMIUM WELCOME HEADER --- */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-2xl shadow-gray-200/40">
-        <div className="flex items-center gap-6">
+    <div className="max-w-7xl mx-auto space-y-6 animate-in fade-in duration-500">
+      {/* --- MINIMAL WELCOME HEADER --- */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+        <div className="flex items-center gap-5">
           <div className="relative">
-            <div className="w-20 h-20 rounded-[2rem] bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-white shadow-xl shadow-blue-200">
-              <span className="text-3xl font-black uppercase">
-                {user?.name?.charAt(0)}
-              </span>
+            <div className="w-16 h-16 rounded-xl bg-slate-900 flex items-center justify-center text-white text-2xl font-bold">
+              {user?.name?.charAt(0)}
             </div>
-            <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-green-500 border-4 border-white rounded-full flex items-center justify-center text-white">
-              <ShieldCheck size={14} />
+            <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-emerald-500 border-2 border-white rounded-full flex items-center justify-center text-white">
+              <ShieldCheck size={12} />
             </div>
           </div>
           <div>
-            <div className="flex items-center gap-3 mb-1">
-              <h1 className="text-3xl font-black text-gray-900 tracking-tight leading-none">
-                {user?.name}
+            <div className="flex items-center gap-3">
+              <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+                Welcome, {user?.name}
               </h1>
-              <span className="px-3 py-1 bg-blue-50 text-blue-600 text-[10px] font-black uppercase rounded-lg border border-blue-100 tracking-widest">
-                {user.role}
+              <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-[9px] font-bold uppercase rounded border border-slate-200 tracking-widest">
+                {user?.role}
               </span>
             </div>
-            <p className="text-gray-400 font-bold uppercase text-[10px] tracking-widest flex items-center gap-2">
-              <Zap size={12} className="text-amber-500" />
+            <p className="text-slate-400 font-semibold text-[10px] uppercase tracking-wider flex items-center gap-2 mt-1">
+              <Zap size={10} className="text-amber-500" />
               {isAdmin
-                ? "Financial Governance Active"
-                : "Member Ledger Overview"}
+                ? "Governance Hub Active"
+                : `Member Since: ${stats.memberSince}`}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           {isAdmin && (
             <Link to="/admin/collections">
-              <button className="flex items-center gap-3 px-8 py-4 bg-blue-600 text-white rounded-2xl shadow-2xl shadow-blue-500/30 hover:bg-blue-700 hover:-translate-y-1 transition-all text-sm font-black uppercase tracking-widest active:scale-95">
-                <PlusCircle size={20} /> New Collection
+              <button className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-all text-xs font-bold uppercase tracking-wider active:scale-95 shadow-sm">
+                <PlusCircle size={16} /> New Collection
               </button>
             </Link>
           )}
-          <div className="hidden sm:flex items-center gap-3 px-6 py-4 bg-gray-50 rounded-2xl border border-gray-100">
-            <Calendar size={20} className="text-blue-600" />
-            <span className="text-sm font-black text-gray-700 uppercase tracking-tighter">
+          <div className="hidden sm:flex items-center gap-2 px-4 py-2.5 bg-slate-50 rounded-lg border border-slate-100">
+            <Calendar size={16} className="text-slate-400" />
+            <span className="text-[11px] font-bold text-slate-600 uppercase">
               {formatDate(new Date())}
             </span>
           </div>
@@ -102,204 +107,197 @@ const MainDashboard = () => {
       </div>
 
       {/* --- FINANCIAL KPI GRID --- */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           {
-            label: isAdmin ? "Total Members" : "Active Units",
+            label: isAdmin ? "Active Society Members" : "Allocated Share Units",
             value: isAdmin ? stats.totalMembers : `${user?.shares || 0} Shares`,
-            icon: isAdmin ? <Users size={24} /> : <Layers size={24} />,
-            color: "blue",
+            icon: isAdmin ? <Users size={20} /> : <Layers size={20} />,
+            color: "slate",
           },
           {
-            label: "Society Fund",
+            label: isAdmin ? "Available Society Fund" : "Your Total Deposits",
             value: formatCurrency(stats.totalCollection),
-            icon: <Wallet size={24} />,
-            color: "green",
+            icon: <Wallet size={20} />,
+            color: "emerald",
           },
           {
             label: "Active Projects",
             value: formatCurrency(stats.totalInvestments),
-            icon: <Activity size={24} />,
-            color: "purple",
+            icon: <Activity size={20} />,
+            color: "blue",
           },
           {
-            label: "Projected Yield",
+            label: "Projected Annual Yield",
             value: formatCurrency((user?.shares || 1) * 1000 * 12),
-            icon: <PieChart size={24} />,
-            color: "orange",
+            icon: <PieChart size={20} />,
+            color: "amber",
           },
         ].map((item, idx) => (
           <div
             key={idx}
-            className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-xl shadow-gray-200/20 hover:shadow-2xl hover:-translate-y-1 transition-all group"
+            className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-slate-300 hover:shadow-md transition-all group"
           >
             <div
-              className={`p-4 bg-${item.color}-50 text-${item.color}-600 rounded-2xl w-fit group-hover:scale-110 transition-transform`}
+              className={`p-2.5 bg-${item.color}-50 text-${item.color}-600 rounded-lg w-fit mb-4 group-hover:scale-110 transition-transform`}
             >
               {item.icon}
             </div>
-            <div className="mt-6">
-              <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.2em] mb-1">
-                {item.label}
-              </p>
-              <h2 className="text-2xl font-black text-gray-900 tracking-tighter">
-                {item.value}
-              </h2>
-            </div>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">
+              {item.label}
+            </p>
+            <h2 className="text-lg font-bold text-slate-900 tracking-tight">
+              {item.value}
+            </h2>
           </div>
         ))}
       </div>
 
       {/* --- ANALYTICS & ACTIVITY HUB --- */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-10">
-        {/* --- DYNAMIC CHART SECTION --- */}
-        <div className="xl:col-span-2 bg-white rounded-[3rem] shadow-xl shadow-gray-200/20 border border-gray-100 overflow-hidden flex flex-col min-h-[580px]">
-          <div className="p-10 border-b border-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 bg-gray-50/20">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        {/* --- REVENUE CHART SECTION --- */}
+        <div className="xl:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+          <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/30">
             <div>
-              <h3 className="font-black text-gray-900 uppercase text-xs tracking-[0.3em] mb-2 flex items-center gap-2">
-                <Activity size={16} className="text-blue-600" /> Revenue
-                Trajectory
+              <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center gap-2">
+                <TrendingUp size={14} className="text-blue-500" />
+                {isAdmin
+                  ? "Global Revenue Trajectory"
+                  : "Personal Savings Growth"}
               </h3>
-              <p className="text-[11px] text-gray-400 font-bold uppercase">
-                Real-time collection scaling for {new Date().getFullYear()}
+              <p className="text-[10px] text-slate-400 font-medium uppercase mt-0.5">
+                Fiscal Period {new Date().getFullYear()}
               </p>
             </div>
-
-            <div className="flex items-center gap-3 px-5 py-2.5 bg-green-50 rounded-2xl border border-green-100">
-              <TrendingUp size={16} className="text-green-600" />
-              <span className="text-[11px] font-black text-green-700 uppercase tracking-widest">
-                {stats.collectionTrend?.length > 1
-                  ? (
-                      ((stats.collectionTrend[stats.collectionTrend.length - 1]
-                        .total -
-                        stats.collectionTrend[0].total) /
-                        stats.collectionTrend[0].total) *
-                      100
-                    ).toFixed(1)
-                  : "0.0"}
-                % Dynamic Growth
-              </span>
+            <div className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-[10px] font-bold text-slate-600 uppercase">
+              Status:{" "}
+              {stats.collectionTrend?.length > 1 ? "Increasing" : "Stable"}
             </div>
           </div>
 
-          <div className="p-10 flex-1">
+          <div className="p-6 flex-1 min-h-[350px]">
             <CollectionChart
               data={
                 stats.collectionTrend?.length > 0
                   ? stats.collectionTrend
                   : [
-                      { name: "Jan", total: 0 },
-                      { name: "Feb", total: stats.totalCollection || 0 },
+                      { name: "Prev", total: 0 },
+                      { name: "Current", total: stats.totalCollection || 0 },
                     ]
               }
             />
           </div>
 
-          <div className="px-10 py-6 bg-gray-50/50 border-t border-gray-50 flex justify-between items-center">
-            <div className="flex items-center gap-3">
-              <div className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
-              <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
-                Live Sync Engine Active
+          <div className="px-6 py-3 bg-slate-50/50 border-t border-slate-100 flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <RefreshCw size={12} className="text-blue-500 animate-spin" />
+              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                Ledger Synchronization Active
               </span>
             </div>
-            <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest bg-blue-50 px-4 py-2 rounded-xl">
-              Next Ledger Update:{" "}
-              {new Date(Date.now() + 3600000).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
+            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+              Malibag Shomiti Registry
             </p>
           </div>
         </div>
 
-        {/* --- RECENT ACTIVITY HUB --- */}
-        <div className="bg-white p-10 rounded-[3rem] border border-gray-100 shadow-xl shadow-gray-200/20 flex flex-col">
-          <div className="flex items-center justify-between mb-10">
-            <h3 className="font-black text-gray-900 text-xs uppercase tracking-[0.3em] flex items-center gap-3">
-              <HistoryIcon size={20} className="text-blue-600" /> History
+        {/* --- RECENT ACTIVITY LEDGER --- */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col">
+          <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/30">
+            <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center gap-2">
+              <HistoryIcon size={14} className="text-blue-500" /> Recent
+              Activity
             </h3>
             <Link
-              to={isAdmin ? "/admin/all-transactions" : "/member/history"}
-              className="text-[10px] font-black uppercase tracking-widest text-blue-600 hover:text-blue-700 flex items-center gap-2 group"
+              to={isAdmin ? "/admin/reports" : "/member/history"}
+              className="text-[9px] font-bold uppercase text-blue-600 hover:text-blue-800 flex items-center gap-1 group"
             >
-              Audit Trail{" "}
+              View Full Ledger
               <ArrowRight
-                size={14}
-                className="group-hover:translate-x-1 transition-transform"
+                size={10}
+                className="group-hover:translate-x-0.5 transition-transform"
               />
             </Link>
           </div>
 
-          <div className="space-y-8 flex-1">
+          <div className="divide-y divide-slate-50 flex-1 overflow-y-auto max-h-[450px]">
             {stats.recentTransactions?.length > 0 ? (
-              stats.recentTransactions.slice(0, 6).map((t, idx) => {
-                const isExpense = t.type === "expense";
-                return (
-                  <div
-                    key={idx}
-                    className="flex items-center justify-between group/item"
-                  >
-                    <div className="flex items-center gap-5">
-                      <div
-                        className={`p-4 rounded-[1.2rem] transition-all shadow-sm ${
-                          isExpense
-                            ? "bg-red-50 text-red-600"
-                            : "bg-green-50 text-green-600"
-                        }`}
-                      >
-                        {isExpense ? (
-                          <ArrowDownRight size={20} />
-                        ) : (
-                          <ArrowUpRight size={20} />
-                        )}
-                      </div>
-                      <div>
-                        <p className="text-sm font-black text-gray-800 uppercase tracking-tighter mb-0.5">
-                          {t.remarks?.substring(0, 20) ||
-                            (isExpense ? "Expense" : "Collection")}
-                          ...
-                        </p>
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest flex items-center gap-2">
-                          {t.month} {t.year}
-                        </p>
-                      </div>
+              stats.recentTransactions.slice(0, 8).map((t, idx) => (
+                <div
+                  key={idx}
+                  className="p-4 flex items-center justify-between hover:bg-slate-50/50 transition-colors"
+                >
+                  <div className="flex items-center gap-4">
+                    <div
+                      className={`p-2 rounded-lg ${
+                        t.type === "expense"
+                          ? "bg-rose-50 text-rose-600"
+                          : "bg-emerald-50 text-emerald-600"
+                      }`}
+                    >
+                      {t.type === "expense" ? (
+                        <ArrowDownRight size={14} />
+                      ) : (
+                        <ArrowUpRight size={14} />
+                      )}
                     </div>
-                    <div className="text-right">
-                      <p
-                        className={`text-sm font-black tracking-tighter ${
-                          isExpense ? "text-red-600" : "text-green-600"
-                        }`}
-                      >
-                        {isExpense ? "-" : "+"}
-                        {formatCurrency(t.amount)}
+                    <div>
+                      <p className="text-xs font-bold text-slate-700 truncate max-w-[120px]">
+                        {t.remarks ||
+                          (t.type === "deposit"
+                            ? "Monthly Deposit"
+                            : "Service Expense")}
                       </p>
-                      <p className="text-[9px] font-black text-gray-300 uppercase tracking-widest">
-                        {t.category?.replace(/_/g, " ")}
+                      <p className="text-[9px] text-slate-400 font-semibold uppercase mt-0.5">
+                        {t.month} {t.year}
                       </p>
                     </div>
                   </div>
-                );
-              })
+                  <div className="text-right">
+                    <p
+                      className={`text-xs font-bold ${
+                        t.type === "expense"
+                          ? "text-rose-600"
+                          : "text-emerald-600"
+                      }`}
+                    >
+                      {t.type === "expense" ? "-" : "+"}{" "}
+                      {formatCurrency(t.amount)}
+                    </p>
+                    <p className="text-[8px] font-bold text-slate-300 uppercase tracking-tighter">
+                      {t.category?.replace(/_/g, " ")}
+                    </p>
+                  </div>
+                </div>
+              ))
             ) : (
-              <div className="h-full flex flex-col items-center justify-center opacity-30">
-                <HistoryIcon size={48} className="mb-4 text-gray-200" />
-                <p className="text-xs font-black uppercase tracking-[0.4em]">
-                  No Live Activity
+              <div className="py-20 text-center opacity-40">
+                <HistoryIcon
+                  size={32}
+                  className="mx-auto mb-2 text-slate-300"
+                />
+                <p className="text-[10px] font-bold uppercase tracking-widest">
+                  No Recent Activity Found
                 </p>
               </div>
             )}
           </div>
 
-          <div className="mt-10 p-6 bg-blue-600 rounded-[2rem] text-white flex items-center justify-between shadow-2xl shadow-blue-500/30">
+          <div className="p-5 border-t border-slate-100 bg-slate-900 rounded-b-xl text-white flex items-center justify-between">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-widest opacity-60">
-                Verified Balance
+              <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">
+                {isAdmin
+                  ? "Total Society Liquidity"
+                  : "Verified Personal Balance"}
               </p>
-              <p className="text-xl font-black tracking-tighter">
+              <p className="text-base font-bold tracking-tight">
                 {formatCurrency(stats.totalCollection)}
               </p>
             </div>
-            <ArrowUpCircle size={32} className="opacity-40" />
+            <ArrowUpCircle
+              size={24}
+              className={`text-emerald-500 opacity-60`}
+            />
           </div>
         </div>
       </div>

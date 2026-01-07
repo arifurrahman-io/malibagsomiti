@@ -1,16 +1,14 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
-  CheckCircle,
+  CheckCircle2,
   UserCheck,
   RotateCcw,
   CalendarDays,
   AlertTriangle,
-  Info,
   ShieldCheck,
   ChevronRight,
   Users,
   Layers,
-  CheckCircle2,
   Clock,
   ArrowRight,
 } from "lucide-react";
@@ -48,7 +46,7 @@ const CollectionEntry = () => {
     return years.reverse();
   }, [currentYear]);
 
-  // UI State: Using Strings for month names to ensure total sync with DB
+  // UI State: String-based months for DB consistency
   const [selectedYear, setSelectedYear] = useState(Number(currentYear));
   const [selectedMonth, setSelectedMonth] = useState(
     MONTH_NAMES[new Date().getMonth()]
@@ -64,9 +62,6 @@ const CollectionEntry = () => {
     `/members?branch=${selectedBranch}`
   );
 
-  /**
-   * REFRESH STATUS: Real-time payment verification
-   */
   const checkPayments = useCallback(async () => {
     try {
       const res = await api.get("/finance/check-payments", {
@@ -91,7 +86,6 @@ const CollectionEntry = () => {
     return Array.isArray(raw) ? raw : [];
   }, [data]);
 
-  // Auto-selection logic for unpaid active members
   useEffect(() => {
     const eligible = membersArray
       .filter((m) => m.status === "active" && !paidMemberIds.includes(m._id))
@@ -115,9 +109,6 @@ const CollectionEntry = () => {
     );
   };
 
-  /**
-   * TRANSACTION EXECUTION: String-based month transmission
-   */
   const executeBulkDeposit = async () => {
     setIsConfirmOpen(false);
     setIsProcessing(true);
@@ -129,19 +120,16 @@ const CollectionEntry = () => {
       await postDeposit(
         selectedMembers,
         `Monthly Collection: ${selectedMonth} ${selectedYear} (${selectedBranch})`,
-        {
-          month: selectedMonth,
-          year: selectedYear,
-        }
+        { month: selectedMonth, year: selectedYear }
       );
 
-      toast.success(`${selectedMonth} deposits successfully recorded.`, {
+      toast.success(`${selectedMonth} deposits recorded.`, {
         id: loadingToast,
       });
       setSelectedMembers([]);
       await Promise.all([refetch(), checkPayments()]);
     } catch (err) {
-      toast.error("Process failed: Please verify server connectivity.", {
+      toast.error("Connectivity failure. Verify server status.", {
         id: loadingToast,
       });
     } finally {
@@ -157,297 +145,235 @@ const CollectionEntry = () => {
   if (loading) return <DashboardSkeleton />;
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-1000">
-      {/* --- HEADER & CONTROLS --- */}
-      <div className="relative overflow-hidden bg-white p-8 md:p-10 rounded-[2.5rem] border border-gray-100 shadow-2xl shadow-blue-500/5">
-        <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none">
-          <Layers size={200} className="text-blue-600" />
-        </div>
-
-        <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-8">
-          <div className="flex items-center gap-6">
-            <div className="flex-shrink-0 p-5 bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-[1.5rem] shadow-xl shadow-blue-200">
-              <CalendarDays size={32} />
-            </div>
-            <div>
-              <h1 className="text-3xl font-black text-gray-900 tracking-tight leading-tight">
-                Collection Management
-              </h1>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="flex h-2 w-2 rounded-full bg-green-500" />
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">
-                  Live Ledger: {selectedMonth} {selectedYear}
-                </p>
-              </div>
-            </div>
+    <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
+      {/* --- HEADER SECTION --- */}
+      <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-slate-100 text-slate-600 rounded-lg">
+            <CalendarDays size={24} />
           </div>
-
-          <div className="flex items-center gap-3 px-5 py-3 bg-amber-50 text-amber-700 rounded-2xl border border-amber-100/50">
-            <ShieldCheck size={18} />
-            <span className="text-[11px] font-black uppercase tracking-wider">
-              Automated Verification Active
-            </span>
+          <div>
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+              Bulk Collection Management
+            </h1>
+            <p className="text-xs text-slate-500 font-medium">
+              Verify and process monthly member contributions.
+            </p>
           </div>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-10 pt-10 border-t border-gray-50">
-          <div className="space-y-3">
-            <label className="flex items-center gap-2 text-[11px] font-black text-gray-400 uppercase ml-1 tracking-widest">
-              <Clock size={12} /> Financial Period
-            </label>
-            <select
-              value={selectedMonth}
-              onChange={(e) => {
-                setSelectedMonth(e.target.value);
-                setSelectedMembers([]);
-              }}
-              className="w-full px-6 py-4 bg-gray-50/50 border border-gray-100 rounded-2xl font-bold text-gray-800 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 outline-none transition-all appearance-none cursor-pointer hover:bg-white"
-            >
-              {MONTH_NAMES.map((m) => (
-                <option key={m} value={m}>
-                  {m}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="space-y-3">
-            <label className="flex items-center gap-2 text-[11px] font-black text-gray-400 uppercase ml-1 tracking-widest">
-              <Layers size={12} /> Fiscal Year
-            </label>
-            <select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(Number(e.target.value))}
-              className="w-full px-6 py-4 bg-gray-50/50 border border-gray-100 rounded-2xl font-bold text-gray-800 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 outline-none transition-all appearance-none cursor-pointer hover:bg-white"
-            >
-              {availableYears.map((y) => (
-                <option key={y} value={y}>
-                  {y}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="space-y-3">
-            <label className="flex items-center gap-2 text-[11px] font-black text-gray-400 uppercase ml-1 tracking-widest">
-              <Users size={12} /> Branch Target
-            </label>
-            <select
-              value={selectedBranch}
-              onChange={(e) => setSelectedBranch(e.target.value)}
-              className="w-full px-6 py-4 bg-gray-50/50 border border-gray-100 rounded-2xl font-bold text-gray-800 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 outline-none transition-all appearance-none cursor-pointer hover:bg-white"
-            >
-              {BRANCHES.map((b) => (
-                <option key={b} value={b}>
-                  {b}
-                </option>
-              ))}
-            </select>
-          </div>
+        <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 rounded-lg border border-emerald-100">
+          <ShieldCheck size={16} />
+          <span className="text-[10px] font-bold uppercase tracking-wider">
+            Audit Verification Active
+          </span>
         </div>
       </div>
 
-      {/* --- MEMBER SELECTION INTERFACE --- */}
-      <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-2xl shadow-gray-200/40 overflow-hidden">
-        <div className="p-8 bg-gray-50/50 flex flex-col sm:flex-row justify-between items-center gap-4 border-b border-gray-100">
+      {/* --- CONTROLS GRID --- */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {[
+          {
+            label: "Financial Period",
+            icon: Clock,
+            val: selectedMonth,
+            setter: setSelectedMonth,
+            options: MONTH_NAMES,
+          },
+          {
+            label: "Fiscal Year",
+            icon: Layers,
+            val: selectedYear,
+            setter: setSelectedYear,
+            options: availableYears,
+          },
+          {
+            label: "Target Branch",
+            icon: Users,
+            val: selectedBranch,
+            setter: setSelectedBranch,
+            options: BRANCHES,
+          },
+        ].map((ctrl, i) => (
+          <div
+            key={i}
+            className="bg-white p-4 rounded-xl border border-slate-200 space-y-2"
+          >
+            <label className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">
+              <ctrl.icon size={12} /> {ctrl.label}
+            </label>
+            <select
+              value={ctrl.val}
+              onChange={(e) => {
+                ctrl.setter(i === 1 ? Number(e.target.value) : e.target.value);
+                if (i === 0) setSelectedMembers([]);
+              }}
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-100 rounded-lg text-sm font-bold text-slate-700 outline-none focus:border-blue-500 transition-all cursor-pointer"
+            >
+              {ctrl.options.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
+              ))}
+            </select>
+          </div>
+        ))}
+      </div>
+
+      {/* --- SELECTION INTERFACE --- */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 bg-slate-50/50 flex flex-col sm:flex-row justify-between items-center gap-4 border-b border-slate-100">
           <button
             onClick={handleSelectAll}
-            className="group flex items-center gap-3 px-8 py-3 bg-white text-[11px] font-black text-blue-600 border border-blue-100 rounded-xl uppercase tracking-[0.15em] hover:bg-blue-600 hover:text-white transition-all shadow-sm active:scale-95"
+            className="text-[10px] font-bold text-blue-600 uppercase tracking-wider bg-white border border-blue-100 px-4 py-2 rounded-lg hover:bg-blue-600 hover:text-white transition-all active:scale-95"
           >
-            {selectedMembers.length ? "Reset Selection" : "Collect All Unpaid"}
-            <ChevronRight
-              size={14}
-              className="group-hover:translate-x-1 transition-transform"
-            />
+            {selectedMembers.length ? "Reset Selection" : "Select All Unpaid"}
           </button>
-
-          <div className="flex items-center gap-4 px-6 py-2 bg-white rounded-full border border-gray-100">
+          <div className="flex items-center gap-2">
             <div
-              className={`h-2.5 w-2.5 rounded-full ${
+              className={`h-1.5 w-1.5 rounded-full ${
                 selectedMembers.length
                   ? "bg-blue-500 animate-pulse"
-                  : "bg-gray-300"
+                  : "bg-slate-300"
               }`}
             />
-            <span className="text-[11px] font-black text-gray-500 uppercase tracking-widest">
-              {selectedMembers.length} Members Ready for Inflow
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+              {selectedMembers.length} Members Ready
             </span>
           </div>
         </div>
 
-        <div className="divide-y divide-gray-50 max-h-[500px] overflow-y-auto custom-scrollbar">
+        <div className="divide-y divide-slate-100 max-h-[450px] overflow-y-auto custom-scrollbar">
           {membersArray.length > 0 ? (
             membersArray.map((m) => {
               const isPaid = paidMemberIds.includes(m._id);
               const isSelected = selectedMembers.includes(m._id);
-
               return (
                 <div
                   key={m._id}
                   onClick={() => !isPaid && handleToggleMember(m._id)}
-                  className={`flex justify-between items-center px-10 py-7 transition-all group relative ${
+                  className={`flex justify-between items-center px-8 py-5 transition-all group ${
                     isPaid
-                      ? "opacity-40 grayscale-[0.5] bg-gray-50/50 cursor-not-allowed"
-                      : isSelected
-                      ? "bg-blue-50/30 cursor-pointer"
-                      : "hover:bg-gray-50/80 cursor-pointer"
+                      ? "bg-slate-50/50 opacity-60 cursor-not-allowed"
+                      : "hover:bg-slate-50 cursor-pointer"
                   }`}
                 >
-                  {isSelected && !isPaid && (
-                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-full my-2" />
-                  )}
-
-                  <div className="flex items-center gap-8">
+                  <div className="flex items-center gap-5">
                     <div
-                      className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-500 border-2 ${
+                      className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-all ${
                         isPaid
-                          ? "bg-green-500 border-green-500 shadow-lg shadow-green-100 scale-110"
+                          ? "bg-emerald-500 border-emerald-500"
                           : isSelected
-                          ? "bg-blue-600 border-blue-600 shadow-lg shadow-blue-200"
-                          : "border-gray-200 bg-white"
+                          ? "bg-blue-600 border-blue-600"
+                          : "border-slate-200 bg-white"
                       }`}
                     >
-                      {isPaid ? (
-                        <CheckCircle2 size={18} className="text-white" />
-                      ) : (
-                        isSelected && (
-                          <UserCheck size={18} className="text-white" />
-                        )
+                      {(isPaid || isSelected) && (
+                        <CheckCircle2 size={14} className="text-white" />
                       )}
                     </div>
-
                     <div>
-                      <h3 className="font-black text-gray-900 group-hover:text-blue-600 transition-colors tracking-tight text-lg leading-none mb-2">
+                      <h3 className="font-bold text-slate-900 text-md leading-tight">
                         {m.name}
                       </h3>
-                      <div className="flex items-center gap-3">
-                        <span
-                          className={`px-2.5 py-0.5 text-[9px] font-black uppercase rounded-md ${
-                            isPaid
-                              ? "bg-green-100 text-green-700"
-                              : "bg-amber-100 text-amber-700"
-                          }`}
-                        >
-                          {isPaid ? "Verified" : "Pending"}
-                        </span>
-                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
-                          {isPaid
-                            ? `Cycle Complete`
-                            : m.bankAccount || "Standard Account"}
-                        </span>
-                      </div>
+                      <p className="text-[13px] font-semibold text-slate-400 uppercase mt-0.5 tracking-tighter">
+                        {isPaid ? "Paid" : m.bankAccount || "Standard Savings"}
+                      </p>
                     </div>
                   </div>
-
                   <div className="text-right">
                     <p
-                      className={`text-2xl font-black tracking-tighter transition-all ${
-                        isSelected ? "text-blue-700" : "text-gray-900"
+                      className={`text-sm font-bold ${
+                        isSelected ? "text-blue-600" : "text-slate-900"
                       }`}
                     >
                       {formatCurrency(m.shares * 1000)}
                     </p>
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                      {m.shares} Units Shared
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                      {m.shares} Shares
                     </p>
                   </div>
                 </div>
               );
             })
           ) : (
-            <div className="p-32 text-center flex flex-col items-center">
-              <div className="p-6 bg-gray-50 rounded-full mb-6">
-                <RotateCcw
-                  className="animate-spin-slow text-gray-300"
-                  size={56}
-                />
-              </div>
-              <p className="text-sm font-black text-gray-400 uppercase tracking-[0.4em]">
-                No Branch Data Found
+            <div className="py-20 text-center flex flex-col items-center">
+              <RotateCcw
+                className="text-slate-200 mb-3 animate-spin-slow"
+                size={40}
+              />
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                No Active Member Data
               </p>
             </div>
           )}
         </div>
 
-        {/* --- DYNAMIC ACTION FOOTER --- */}
-        <div className="p-10 md:p-14 bg-gray-900 flex flex-col lg:flex-row justify-between items-center gap-10">
-          <div className="text-center lg:text-left">
-            <p className="text-[11px] font-black text-gray-500 uppercase tracking-[0.4em] mb-3">
-              Total Batch Contribution
+        {/* --- FOOTER ACTION --- [cite: 2025-10-11] */}
+        <div className="p-8 bg-slate-900 flex flex-col sm:flex-row justify-between items-center gap-6">
+          <div>
+            <p className="text-[16px] font-bold text-slate-100 uppercase tracking-[0.2em] mb-1">
+              Total
             </p>
-            <h2 className="text-6xl font-black text-white tracking-tighter flex items-center gap-4">
+            <h2 className="text-3xl font-bold text-white tracking-tight">
               {formatCurrency(totalBatchAmount)}
-              <span className="text-sm text-blue-500 font-bold tracking-widest uppercase bg-blue-500/10 px-4 py-1 rounded-full border border-blue-500/20">
-                Inflow
-              </span>
             </h2>
           </div>
-
           <Button
             disabled={!selectedMembers.length || isProcessing}
             onClick={() => setIsConfirmOpen(true)}
-            className="w-full lg:w-auto px-20 py-7 bg-blue-600 text-white rounded-[2rem] text-xl font-black shadow-[0_20px_50px_rgba(37,99,235,0.3)] hover:bg-blue-700 hover:-translate-y-1 active:scale-95 transition-all flex items-center justify-center gap-4"
+            className="w-full sm:w-auto px-10 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-all"
           >
             {isProcessing ? (
-              <RotateCcw className="animate-spin" />
+              <RotateCcw className="animate-spin" size={18} />
             ) : (
               <>
-                Confirm {selectedMembers.length} Deposits
-                <ArrowRight size={24} />
+                Post {selectedMembers.length} Transactions{" "}
+                <ArrowRight size={18} />
               </>
             )}
           </Button>
         </div>
       </div>
 
-      {/* --- CONFIRMATION SYSTEM --- */}
+      {/* --- CONFIRMATION MODAL --- */}
       {isConfirmOpen && (
-        <div className="fixed inset-0 z-[100] bg-gray-950/90 backdrop-blur-xl flex items-center justify-center p-6 animate-in fade-in duration-500">
-          <div className="bg-white rounded-[4rem] shadow-2xl p-12 md:p-16 max-w-xl w-full animate-in zoom-in-95 duration-300">
-            <div className="w-28 h-28 bg-blue-50 text-blue-600 rounded-[2.5rem] flex items-center justify-center mx-auto mb-10 rotate-12 shadow-inner">
-              <AlertTriangle size={56} />
+        <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-6">
+          <div className="bg-white rounded-xl shadow-2xl p-10 max-w-md w-full animate-in zoom-in duration-300">
+            <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
+              <AlertTriangle size={32} />
             </div>
-
-            <h2 className="text-4xl font-black text-center text-gray-900 tracking-tighter mb-4">
-              Confirm Ledger?
+            <h2 className="text-xl font-bold text-center text-slate-900 mb-2">
+              Finalize Ledger?
             </h2>
-            <p className="text-center text-gray-500 font-medium mb-10 max-w-xs mx-auto text-sm leading-relaxed">
-              You are about to finalize a batch contribution for the{" "}
-              <span className="text-blue-600 font-black">Malibag-A-Day</span>{" "}
-              branch.
+            <p className="text-center text-slate-500 text-sm mb-8">
+              Authorizing collection for{" "}
+              <b>
+                {selectedMonth} {selectedYear}
+              </b>{" "}
+              across selected branch members.
             </p>
 
-            <div className="bg-gray-50/80 p-8 rounded-[2.5rem] space-y-6 mb-12 border border-gray-100">
-              <div className="flex justify-between items-center">
-                <span className="text-[11px] font-black uppercase text-gray-400 tracking-widest">
-                  Active Cycle
-                </span>
-                <span className="text-gray-900 font-black text-lg">
-                  {selectedMonth}, {selectedYear}
-                </span>
-              </div>
-              <div className="flex justify-between items-center border-t border-gray-200/50 pt-6">
-                <span className="text-[11px] font-black uppercase text-gray-400 tracking-widest">
-                  Net Batch Inflow
-                </span>
-                <span className="text-3xl text-blue-600 font-black tracking-tighter leading-none">
-                  {formatCurrency(totalBatchAmount)}
-                </span>
-              </div>
+            <div className="bg-slate-50 p-5 rounded-lg mb-8 border border-slate-100 flex justify-between items-center">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                Net Inflow
+              </span>
+              <span className="text-xl font-bold text-blue-600">
+                {formatCurrency(totalBatchAmount)}
+              </span>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-5">
+            <div className="flex gap-3">
               <button
                 onClick={() => setIsConfirmOpen(false)}
-                className="flex-1 py-5 bg-white border-2 border-gray-100 text-gray-400 font-black rounded-3xl hover:bg-gray-50 hover:text-gray-600 transition-all uppercase text-xs tracking-widest"
+                className="flex-1 py-3 bg-slate-100 text-slate-600 font-bold rounded-lg text-xs uppercase tracking-widest transition-all"
               >
                 Cancel
               </button>
               <button
                 onClick={executeBulkDeposit}
-                className="flex-1 py-5 bg-blue-600 text-white font-black rounded-3xl shadow-2xl shadow-blue-200 hover:bg-blue-700 transition-all uppercase text-xs tracking-widest"
+                className="flex-1 py-3 bg-blue-600 text-white font-bold rounded-lg text-xs uppercase tracking-widest hover:bg-blue-700 shadow-md shadow-blue-200 transition-all"
               >
-                Finalize Ledger
+                Execute
               </button>
             </div>
           </div>
@@ -458,9 +384,3 @@ const CollectionEntry = () => {
 };
 
 export default CollectionEntry;
-
-/**
- * NEXT STEP:
- * Would you like me to implement the auto-email generation logic that triggers
- * immediately after this "Finalize Ledger" button is clicked?
- */

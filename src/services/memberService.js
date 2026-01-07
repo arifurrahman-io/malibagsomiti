@@ -1,37 +1,45 @@
-import api from "./api"; //
+import api from "./api";
 
 /**
- * Fetch all members with optional filters (branch, status)
- * Returns: { success: true, data: [...] }
+ * @desc    Fetch all members with optional filters (branch, status)
+ * @returns {Promise} { success: true, data: [...] }
  */
 export const getMembers = (params) => api.get("/members", { params });
 
 /**
- * Register a new member (Admin/Super-Admin only)
- * Expected fields: name, email, password, phone, nid, bankAccount, branch, shares, joiningDate
+ * @desc    Register a new member (Admin/Super-Admin only)
+ * @param   {Object} memberData - name, email, password, phone, nid, bankAccount, branch, shares, joiningDate
  */
 export const createMember = (memberData) => api.post("/members", memberData);
 
 /**
- * Get detailed profile including financial summary for dynamic UI cards
- * Path: /api/members/profile/:id
+ * @desc    Get detailed profile including financial summary for dynamic UI cards
+ * @param   {String} id - The specific member ID (used by Admins)
  */
 export const getMemberDetails = (id) => api.get(`/members/profile/${id}`);
 
 /**
- * Update member information (Admin/Super-Admin)
- * Recalculates monthlySubscription automatically if shares are changed
+ * @desc    🚀 NEW: Fetch profile for the currently logged-in user
+ * @returns {Promise} Returns personal financial summary and registry details
+ * This matches the optional parameter route: /api/members/profile/:id?
+ */
+export const getMyProfile = () => api.get("/members/profile");
+
+/**
+ * @desc    Update member information (Admin/Super-Admin)
+ * @param   {String} id - Member ID
+ * @param   {Object} data - Updated profile fields
  */
 export const updateMember = (id, data) => api.put(`/members/${id}`, data);
 
 /**
- * Toggle account status between active and inactive
- * Path: /api/members/:id/status
+ * @desc    Toggle account status between active and inactive
+ * @param   {String} id - Member ID
  */
 export const toggleMemberStatus = (id) => api.patch(`/members/${id}/status`);
 
 /**
- * Permanently delete a member record (Super-Admin Only)
- * WARNING: This should be used with a confirmation modal in the UI.
+ * @desc    Permanently delete a member record (Super-Admin Only)
+ * @param   {String} id - Member ID
  */
 export const deleteMember = (id) => api.delete(`/members/${id}`);
