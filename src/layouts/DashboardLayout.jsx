@@ -15,7 +15,7 @@ import {
   ShieldCheck,
   ChevronRight,
   User,
-  Building2, // Added for Bank Management icon
+  Building2,
 } from "lucide-react";
 import { useAuthStore } from "../store/useAuthStore";
 
@@ -25,10 +25,6 @@ const DashboardLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  /**
-   * 🚀 NAVIGATION CONFIGURATION
-   * Centrally managed routes for all user roles.
-   */
   const menuItems = [
     {
       name: "Dashboard",
@@ -57,7 +53,7 @@ const DashboardLayout = () => {
     {
       name: "Society Banks",
       path: "/admin/banks",
-      icon: Building2, // Use Building2 icon for bank management
+      icon: Building2,
       roles: ["admin", "super-admin"],
     },
     {
@@ -115,7 +111,7 @@ const DashboardLayout = () => {
         onClick={() => mobile && setIsMobileMenuOpen(false)}
         className={`flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 group ${
           isActive
-            ? "bg-slate-900 text-white shadow-md"
+            ? "bg-slate-900 text-white shadow-lg scale-[1.02]"
             : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
         }`}
       >
@@ -140,10 +136,10 @@ const DashboardLayout = () => {
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden font-sans selection:bg-blue-100">
       {/* --- Desktop Sidebar --- */}
-      <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-slate-200 z-50">
-        <div className="p-6 mb-4">
+      <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-slate-200 z-50 shrink-0">
+        <div className="p-6">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-slate-900 rounded-lg text-white">
+            <div className="p-2 bg-slate-900 rounded-lg text-white shadow-lg">
               <ShieldCheck size={20} />
             </div>
             <div className="flex flex-col">
@@ -157,7 +153,7 @@ const DashboardLayout = () => {
           </div>
         </div>
 
-        <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
+        <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto custom-scrollbar">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 ml-2">
             Main Menu
           </p>
@@ -166,75 +162,98 @@ const DashboardLayout = () => {
           ))}
         </nav>
 
-        <div className="p-4 border-t border-slate-100">
+        <div className="p-4 border-t border-slate-100 bg-white">
           <button
             onClick={handleLogout}
-            className="flex items-center justify-between px-4 py-3 w-full text-slate-500 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all group font-semibold text-sm"
+            className="flex items-center gap-3 px-4 py-3 w-full text-slate-500 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all font-semibold text-sm"
           >
-            <div className="flex items-center gap-3">
-              <LogOut size={18} />
-              <span>Logout</span>
-            </div>
+            <LogOut size={18} />
+            <span>Logout</span>
           </button>
         </div>
       </aside>
 
-      {/* --- Mobile Sidebar Overlay --- */}
-      {isMobileMenuOpen && (
-        <div
-          className="fixed inset-0 z-[60] bg-slate-900/40 backdrop-blur-sm lg:hidden transition-opacity"
-          onClick={() => setIsMobileMenuOpen(false)}
-        />
-      )}
+      {/* --- Mobile Menu Overlay --- */}
+      <div
+        className={`fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${
+          isMobileMenuOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
+        onClick={() => setIsMobileMenuOpen(false)}
+      />
 
       {/* --- Mobile Sidebar --- */}
       <aside
-        className={`fixed inset-y-0 left-0 z-[70] w-72 bg-white shadow-2xl transform transition-transform duration-300 ease-in-out lg:hidden ${
+        className={`fixed inset-y-0 left-0 z-[70] w-[85%] max-w-[320px] bg-white shadow-2xl transform transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] lg:hidden flex flex-col ${
           isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex items-center justify-between p-6">
-          <h1 className="text-lg font-bold text-slate-900">Malibag Society</h1>
+        <div className="flex items-center justify-between p-6 border-b border-slate-50">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-slate-900 rounded-lg text-white">
+              <ShieldCheck size={18} />
+            </div>
+            <h1 className="text-lg font-bold text-slate-900">
+              Malibag Society
+            </h1>
+          </div>
           <button
             onClick={() => setIsMobileMenuOpen(false)}
-            className="p-2 text-slate-400 hover:bg-slate-100 rounded-lg"
+            className="p-2 text-slate-400 hover:bg-slate-100 rounded-lg transition-colors"
           >
             <X size={20} />
           </button>
         </div>
-        <nav className="px-4 space-y-1">
+
+        <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
           {filteredMenu.map((item) => (
             <NavLink key={item.path} item={item} mobile={true} />
           ))}
         </nav>
+
+        <div className="p-6 border-t border-slate-100">
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-3 px-4 py-4 w-full bg-red-50 text-red-600 rounded-xl font-bold text-sm"
+          >
+            <LogOut size={18} />
+            <span>Logout Account</span>
+          </button>
+        </div>
       </aside>
 
-      {/* --- Main Viewport --- */}
-      <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 shrink-0 z-40">
+      {/* --- Main Content Area --- */}
+      <div className="flex-1 flex flex-col min-w-0 h-screen">
+        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 md:px-8 shrink-0 z-40">
           <button
-            className="lg:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg"
+            className="lg:hidden p-2.5 text-slate-600 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200"
             onClick={() => setIsMobileMenuOpen(true)}
           >
             <Menu size={20} />
           </button>
 
-          <div className="flex items-center gap-4 ml-auto">
-            <div className="text-right hidden sm:block border-r border-slate-200 pr-4">
-              <p className="text-sm font-bold text-slate-900 leading-none mb-1">
+          {/* Page Title or Breadcrumb could go here */}
+          <div className="hidden md:block">
+            <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+              Malibag Management / {location.pathname.split("/").pop()}
+            </h2>
+          </div>
+
+          <div className="flex items-center gap-3 ml-auto">
+            <div className="text-right hidden xs:block border-r border-slate-100 pr-3">
+              <p className="text-sm font-bold text-slate-900 leading-none truncate max-w-[120px]">
                 {user?.name}
               </p>
-              <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
+              <p className="text-[10px] text-slate-500 font-black uppercase tracking-tighter mt-1">
                 {user?.role?.replace("-", " ")}
               </p>
             </div>
-            <div className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center text-slate-700 font-bold border border-slate-200">
+            <div className="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center text-sm font-black shadow-lg shadow-slate-200 ring-4 ring-slate-50">
               {user?.name?.charAt(0).toUpperCase()}
             </div>
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-10 custom-scrollbar relative">
           <div className="max-w-6xl mx-auto">
             <Outlet />
           </div>
