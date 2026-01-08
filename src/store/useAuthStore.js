@@ -1,6 +1,10 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 
+/**
+ * 🔐 AUTHENTICATION STORE
+ * Manages user identity, tokens, and real-time profile synchronization.
+ */
 export const useAuthStore = create(
   persist(
     (set) => ({
@@ -8,7 +12,9 @@ export const useAuthStore = create(
       token: null,
       isAuthenticated: false,
 
-      // Action: Login
+      /**
+       * @desc Initial authentication after login
+       */
       setAuth: (userData, token) =>
         set({
           user: userData,
@@ -16,21 +22,40 @@ export const useAuthStore = create(
           isAuthenticated: true,
         }),
 
-      // Action: Update Profile (Useful for dynamic UI updates)
+      /**
+       * @desc 🔥 FIX: Updates user profile and fixes "Contact missing"
+       * This ensures fields like 'phone' from the DB are merged into the local state.
+       */
       updateUser: (updatedData) =>
         set((state) => ({
-          user: { ...state.user, ...updatedData },
+          user: state.user ? { ...state.user, ...updatedData } : updatedData,
         })),
 
-      // Action: Logout
+      /**
+       * @desc Alias for updateUser to support Settings.jsx handleSubmit calls
+       */
+      setUser: (userData) =>
+        set((state) => ({
+          user: state.user ? { ...state.user, ...userData } : userData,
+        })),
+
+      /**
+       * @desc Complete session termination and storage cleanup
+       */
       logout: () => {
         set({ user: null, token: null, isAuthenticated: false });
-        localStorage.removeItem("auth-storage"); // Explicit cleanup
+        localStorage.removeItem("auth-storage");
       },
     }),
     {
-      name: "auth-storage", // Key name in localStorage
+      name: "auth-storage",
       storage: createJSONStorage(() => localStorage),
+      // Only persist essential data to prevent stale state issues
+      partialize: (state) => ({
+        user: state.user,
+        token: state.token,
+        isAuthenticated: state.isAuthenticated,
+      }),
     }
   )
 );

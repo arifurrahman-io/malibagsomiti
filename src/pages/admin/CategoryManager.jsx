@@ -20,7 +20,7 @@ import toast from "react-hot-toast";
 const CategoryManager = () => {
   const { data: config, loading, refetch } = useFetch("/finance/categories");
   const [isEditing, setIsEditing] = useState(null);
-  const [formData, setFormData] = useState({ name: "", type: "income" });
+  const [formData, setFormData] = useState({ name: "", type: "deposit" });
   const [newSub, setNewSub] = useState({ id: null, name: "" });
 
   const categoriesList = useMemo(() => {
@@ -38,7 +38,7 @@ const CategoryManager = () => {
         await createCategory({ ...formData, subcategories: [] });
         toast.success("Category Created");
       }
-      setFormData({ name: "", type: "income" });
+      setFormData({ name: "", type: "deposit" });
       setIsEditing(null);
       refetch();
     } catch (err) {
@@ -75,7 +75,7 @@ const CategoryManager = () => {
           Category Management
         </h1>
         <p className="text-sm text-slate-500">
-          Organize your income and expense categories.
+          Organize your deposit and expense categories.
         </p>
       </header>
 
@@ -113,13 +113,13 @@ const CategoryManager = () => {
               <button
                 type="button"
                 className={`px-6 py-2 rounded-md text-xs font-bold transition-all ${
-                  formData.type === "income"
+                  formData.type === "deposit"
                     ? "bg-white text-green-600 shadow-sm"
                     : "text-slate-500"
                 }`}
-                onClick={() => setFormData({ ...formData, type: "income" })}
+                onClick={() => setFormData({ ...formData, type: "deposit" })}
               >
-                Income
+                deposit
               </button>
               <button
                 type="button"
@@ -142,12 +142,12 @@ const CategoryManager = () => {
 
       {/* --- CATEGORY LIST GRID --- */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-        {["income", "expense"].map((type) => (
+        {["deposit", "expense"].map((type) => (
           <div key={type} className="space-y-6">
             <div className="flex items-center gap-3">
               <div
                 className={`w-2 h-2 rounded-full ${
-                  type === "income" ? "bg-green-500" : "bg-red-500"
+                  type === "deposit" ? "bg-green-500" : "bg-red-500"
                 }`}
               />
               <h2 className="text-sm font-bold text-slate-800 uppercase tracking-widest">
@@ -198,7 +198,7 @@ const CategoryManager = () => {
                         <span
                           key={sub}
                           className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold border transition-all ${
-                            type === "income"
+                            type === "deposit"
                               ? "bg-green-50 text-green-600 border-green-100"
                               : "bg-red-50 text-red-600 border-red-100"
                           }`}

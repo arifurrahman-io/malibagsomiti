@@ -39,7 +39,7 @@ const MemberList = () => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    password: "Teacher123!",
+    password: "",
     phone: "",
     nid: "",
     bankAccount: "",
@@ -77,7 +77,7 @@ const MemberList = () => {
       setFormData({
         name: "",
         email: "",
-        password: "Teacher123!",
+        password: "",
         phone: "",
         nid: "",
         bankAccount: "",
