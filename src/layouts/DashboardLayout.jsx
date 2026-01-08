@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   ChevronRight,
   User,
+  Building2, // Added for Bank Management icon
 } from "lucide-react";
 import { useAuthStore } from "../store/useAuthStore";
 
@@ -54,6 +55,12 @@ const DashboardLayout = () => {
       roles: ["admin", "super-admin"],
     },
     {
+      name: "Society Banks",
+      path: "/admin/banks",
+      icon: Building2, // Use Building2 icon for bank management
+      roles: ["admin", "super-admin"],
+    },
+    {
       name: "Investments",
       path: "/admin/investments",
       icon: Wallet,
@@ -74,7 +81,7 @@ const DashboardLayout = () => {
     {
       name: "My Profile",
       path: "/member/profile",
-      icon: User, // Import User from lucide-react
+      icon: User,
       roles: ["member"],
     },
     {
@@ -139,9 +146,14 @@ const DashboardLayout = () => {
             <div className="p-2 bg-slate-900 rounded-lg text-white">
               <ShieldCheck size={20} />
             </div>
-            <h1 className="text-lg font-bold text-slate-900 tracking-tight">
-              Malibag <span className="text-blue-600">S.</span>
-            </h1>
+            <div className="flex flex-col">
+              <h1 className="text-lg font-bold text-slate-900 leading-none">
+                Malibag <span className="text-blue-600">S.</span>
+              </h1>
+              <span className="text-[8px] font-bold text-slate-400 tracking-[0.2em] uppercase mt-1">
+                Registry System
+              </span>
+            </div>
           </div>
         </div>
 

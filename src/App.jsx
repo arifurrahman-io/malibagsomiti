@@ -20,6 +20,12 @@ const Unauthorized = lazy(() => import("./pages/Unauthorized"));
 const FinancialEntry = lazy(() => import("./pages/finance/FinancialEntry"));
 const CategoryCRUD = lazy(() => import("./pages/admin/CategoryManager"));
 
+/**
+ * 🏦 NEW: Bank Account Management Page
+ * For managing society-level bank accounts and balances.
+ */
+const BankManagement = lazy(() => import("./pages/admin/BankManagement"));
+
 // Placeholder components
 const Investments = lazy(() => import("./pages/admin/Investments"));
 const Reports = lazy(() => import("./pages/admin/Reports"));
@@ -59,6 +65,9 @@ function App() {
 
               {/* 💸 NEW: Manual Ledger Entry (Deposits/Expenses) */}
               <Route path="/admin/finance-entry" element={<FinancialEntry />} />
+
+              {/* 🏦 NEW: Society Bank Account Registry */}
+              <Route path="/admin/banks" element={<BankManagement />} />
 
               <Route path="/admin/investments" element={<Investments />} />
               <Route path="/admin/reports" element={<Reports />} />
