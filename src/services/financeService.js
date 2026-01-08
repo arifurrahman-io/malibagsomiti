@@ -28,3 +28,11 @@ export const postExpense = (data) => api.post("/finance/expense", data);
  */
 export const checkPayments = (params) =>
   api.get("/finance/check-payments", { params });
+
+/**
+ * @desc    Record Profit/Loss for a specific investment project
+ * @param   {String} projectId - The ID of the investment
+ * @param   {Object} data - Contains { amount, type (deposit/expense), remarks }
+ */
+export const postInvestmentProfit = (projectId, data) =>
+  api.post(`/finance/investment/${projectId}/profit`, data);

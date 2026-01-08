@@ -44,11 +44,14 @@ const MemberHistory = () => {
       (sum, t) => sum + (t.amount || 0),
       0
     );
+
+    // LOGIC FIX: Check for joiningDate, fallback to createdAt if joiningDate is missing
+    const dateToFormat = user?.joiningDate || user?.createdAt;
+
     return {
       totalSavings,
       recordCount: transactions.length,
-      // FIX: Changed from user?.createdAt to user?.joiningDate
-      activeSince: user?.joiningDate ? formatDate(user.joiningDate) : "N/A",
+      activeSince: dateToFormat ? formatDate(dateToFormat) : "N/A",
     };
   }, [transactions, user]);
 

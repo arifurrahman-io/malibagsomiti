@@ -4,7 +4,14 @@ import api from "./api";
  * @desc    Fetch all members with optional filters (branch, status)
  * @returns {Promise} { success: true, data: [...] }
  */
-export const getMembers = (params) => api.get("/members", { params });
+// Suggested slight enhancement for the Search bar in your Member List
+export const getMembers = (params) =>
+  api.get("/members", {
+    params: {
+      ...params,
+      sort: "-createdAt", // Ensure newest members show at the top by default
+    },
+  });
 
 /**
  * @desc    Register a new member (Admin/Super-Admin only)

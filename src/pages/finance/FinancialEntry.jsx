@@ -20,10 +20,11 @@ const FinancialEntry = () => {
     "/finance/categories"
   );
   const { data: banks, loading: banksLoading } = useFetch("/bank-accounts");
+  const { data: investmentData, loading: investmentsLoading } = useFetch(
+    "/finance/investments"
+  );
 
-  // State to toggle between Date-selection and Month/Year focus
-  const [entryMode, setEntryMode] = useState("general"); // 'general' or 'period'
-
+  const [entryMode, setEntryMode] = useState("general");
   const [formData, setFormData] = useState({
     type: "deposit",
     category: "",
@@ -61,38 +62,35 @@ const FinancialEntry = () => {
     [categoriesArray, formData.type]
   );
 
-  const filteredSubs = useMemo(
-    () =>
+  const filteredSubs = useMemo(() => {
+    const isInvestmentCategory = formData.category
+      .toLowerCase()
+      .includes("investment");
+    if (isInvestmentCategory) {
+      const projects = investmentData?.data || investmentData || [];
+      return projects.map((p) => p.projectName);
+    }
+    return (
       filteredCats.find((c) => c.name === formData.category)?.subcategories ||
-      [],
-    [filteredCats, formData.category]
-  );
+      []
+    );
+  }, [filteredCats, formData.category, investmentData]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!formData.bankAccount) {
-      return toast.error(
-        "No Mother Account found. Please designate one in Bank Management."
-      );
-    }
-
-    // Validation based on mode
+    if (!formData.bankAccount) return toast.error("No Mother Account found.");
     if (entryMode === "period" && (!formData.month || !formData.year)) {
       return toast.error("Month and Year are mandatory for Period Entries.");
     }
 
     const loadingToast = toast.loading("Syncing with Mother Account...");
     try {
-      // Clean payload: if general mode, remove month/year to prevent duplicate index issues
       const payload = { ...formData };
       if (entryMode === "general") {
         delete payload.month;
         delete payload.year;
       }
-
       await api.post("/finance/transaction", payload);
-
       toast.success("Ledger Synchronized Successfully", { id: loadingToast });
       setFormData({
         ...formData,
@@ -109,36 +107,36 @@ const FinancialEntry = () => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto py-10 animate-in fade-in duration-700">
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-        {/* --- Header --- */}
-        <div className="px-8 py-6 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
+    <div className="max-w-xl mx-auto py-6 animate-in fade-in duration-500">
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        {/* --- Compact Header --- */}
+        <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
           <div>
-            <h1 className="text-xl font-bold text-gray-900 tracking-tight">
+            <h1 className="text-lg font-bold text-gray-900 tracking-tight">
               Direct Ledger Entry
             </h1>
-            <p className="text-xs text-gray-500 font-medium">
-              Post manual transactions to the society treasury.
+            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-0.5">
+              Mother Account Sync Active
             </p>
           </div>
-          {(configLoading || banksLoading) && (
-            <RefreshCw size={18} className="text-blue-500 animate-spin" />
+          {(configLoading || banksLoading || investmentsLoading) && (
+            <RefreshCw size={16} className="text-blue-500 animate-spin" />
           )}
         </div>
 
-        {/* --- Mother Account Status --- */}
+        {/* --- Compact Mother Account Status --- */}
         <div
-          className={`px-8 py-3 flex items-center justify-between text-[10px] font-bold uppercase tracking-widest ${
+          className={`px-6 py-2 flex items-center justify-between text-[9px] font-black uppercase tracking-widest ${
             motherAccount
               ? "bg-emerald-50 text-emerald-600"
               : "bg-rose-50 text-rose-600"
           }`}
         >
-          <div className="flex items-center gap-2">
-            <ShieldCheck size={14} />
+          <div className="flex items-center gap-1.5">
+            <ShieldCheck size={12} />
             {motherAccount
               ? `Connected: ${motherAccount.bankName}`
-              : "No Mother Account Selected"}
+              : "No Mother Account"}
           </div>
           {motherAccount && (
             <span>
@@ -147,91 +145,94 @@ const FinancialEntry = () => {
           )}
         </div>
 
-        <form onSubmit={handleSubmit} className="p-8 space-y-6">
-          {/* --- Entry Mode Switcher --- */}
-          <div className="space-y-3">
-            <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest ml-1">
-              Entry Focus
-            </label>
-            <div className="flex gap-4">
-              <button
-                type="button"
-                onClick={() => setEntryMode("general")}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border text-xs font-bold transition-all ${
-                  entryMode === "general"
-                    ? "bg-slate-900 text-white border-slate-900 shadow-lg"
-                    : "bg-white text-slate-500 border-slate-200 hover:border-slate-300"
-                }`}
-              >
-                <CalendarDays size={14} /> Daily Date
-              </button>
-              <button
-                type="button"
-                onClick={() => setEntryMode("period")}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border text-xs font-bold transition-all ${
-                  entryMode === "period"
-                    ? "bg-slate-900 text-white border-slate-900 shadow-lg"
-                    : "bg-white text-slate-500 border-slate-200 hover:border-slate-300"
-                }`}
-              >
-                <Clock size={14} /> Month / Year
-              </button>
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {/* --- Row 1: Mode & Type --- */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">
+                Focus Mode
+              </label>
+              <div className="flex p-1 bg-gray-100 rounded-lg">
+                <button
+                  type="button"
+                  onClick={() => setEntryMode("general")}
+                  className={`flex-1 py-1.5 rounded-md text-[10px] font-black transition-all ${
+                    entryMode === "general"
+                      ? "bg-white text-slate-900 shadow-sm"
+                      : "text-gray-500"
+                  }`}
+                >
+                  DAILY
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEntryMode("period")}
+                  className={`flex-1 py-1.5 rounded-md text-[10px] font-black transition-all ${
+                    entryMode === "period"
+                      ? "bg-white text-slate-900 shadow-sm"
+                      : "text-gray-500"
+                  }`}
+                >
+                  PERIOD
+                </button>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">
+                Flow Type
+              </label>
+              <div className="flex p-1 bg-gray-100 rounded-lg">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setFormData({
+                      ...formData,
+                      type: "deposit",
+                      category: "",
+                      subcategory: "",
+                    })
+                  }
+                  className={`flex-1 py-1.5 rounded-md text-[10px] font-black transition-all ${
+                    formData.type === "deposit"
+                      ? "bg-white text-green-600 shadow-sm"
+                      : "text-gray-500"
+                  }`}
+                >
+                  DEPOSIT
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setFormData({
+                      ...formData,
+                      type: "expense",
+                      category: "",
+                      subcategory: "",
+                    })
+                  }
+                  className={`flex-1 py-1.5 rounded-md text-[10px] font-black transition-all ${
+                    formData.type === "expense"
+                      ? "bg-white text-red-600 shadow-sm"
+                      : "text-gray-500"
+                  }`}
+                >
+                  EXPENSE
+                </button>
+              </div>
             </div>
           </div>
 
-          <div className="h-px bg-gray-100" />
-
-          {/* --- Type Switcher (Deposit/Expense) --- */}
-          <div className="flex p-1 bg-gray-100 rounded-xl">
-            <button
-              type="button"
-              onClick={() =>
-                setFormData({
-                  ...formData,
-                  type: "deposit",
-                  category: "",
-                  subcategory: "",
-                })
-              }
-              className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${
-                formData.type === "deposit"
-                  ? "bg-white text-green-600 shadow-sm"
-                  : "text-gray-500"
-              }`}
-            >
-              <ArrowUpCircle size={14} /> Deposit
-            </button>
-            <button
-              type="button"
-              onClick={() =>
-                setFormData({
-                  ...formData,
-                  type: "expense",
-                  category: "",
-                  subcategory: "",
-                })
-              }
-              className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${
-                formData.type === "expense"
-                  ? "bg-white text-red-600 shadow-sm"
-                  : "text-gray-500"
-              }`}
-            >
-              <ArrowDownCircle size={14} /> Expense
-            </button>
-          </div>
-
-          {/* --- Dynamic Inputs based on Mode --- */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in slide-in-from-top-2 duration-300">
+          {/* --- Row 2: Date / Period Inputs --- */}
+          <div className="grid grid-cols-2 gap-4 animate-in slide-in-from-top-1">
             {entryMode === "general" ? (
-              <div className="col-span-2 space-y-1.5">
-                <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest ml-1">
-                  Transaction Date
+              <div className="col-span-2 space-y-1">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1 text-pretty">
+                  Date
                 </label>
                 <input
                   type="date"
                   required
-                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 outline-none focus:border-blue-500 transition-all"
+                  className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-semibold outline-none focus:border-blue-500 transition-all"
                   value={formData.date}
                   onChange={(e) =>
                     setFormData({ ...formData, date: e.target.value })
@@ -240,13 +241,13 @@ const FinancialEntry = () => {
               </div>
             ) : (
               <>
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest ml-1">
-                    Report Month
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">
+                    Month
                   </label>
                   <select
                     required
-                    className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 outline-none"
+                    className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-xs font-bold outline-none"
                     value={formData.month}
                     onChange={(e) =>
                       setFormData({ ...formData, month: e.target.value })
@@ -273,14 +274,14 @@ const FinancialEntry = () => {
                     ))}
                   </select>
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest ml-1">
-                    Report Year
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">
+                    Year
                   </label>
                   <input
                     type="number"
                     required
-                    className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 outline-none"
+                    className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-xs font-bold outline-none"
                     value={formData.year}
                     onChange={(e) =>
                       setFormData({ ...formData, year: e.target.value })
@@ -291,16 +292,16 @@ const FinancialEntry = () => {
             )}
           </div>
 
-          {/* --- Category Selection --- */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest ml-1">
-                Primary Category
+          {/* --- Row 3: Categories --- */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 text-pretty">
+                Category
               </label>
               <select
                 required
                 value={formData.category}
-                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 outline-none focus:border-blue-500 transition-all"
+                className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-xs font-bold outline-none focus:border-blue-500 transition-all"
                 onChange={(e) =>
                   setFormData({
                     ...formData,
@@ -309,7 +310,7 @@ const FinancialEntry = () => {
                   })
                 }
               >
-                <option value="">Select Category</option>
+                <option value="">Select</option>
                 {filteredCats.map((c) => (
                   <option key={c._id} value={c.name}>
                     {c.name}
@@ -317,23 +318,24 @@ const FinancialEntry = () => {
                 ))}
               </select>
             </div>
-
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest ml-1">
-                Sub-Classification
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 truncate">
+                {formData.category.toLowerCase().includes("investment")
+                  ? "Project"
+                  : "Sub-Category"}
               </label>
               <select
                 required
                 disabled={!formData.category}
                 value={formData.subcategory}
-                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 disabled:bg-gray-50 outline-none"
+                className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-xs font-bold disabled:bg-gray-50 outline-none focus:border-blue-500 transition-all"
                 onChange={(e) =>
                   setFormData({ ...formData, subcategory: e.target.value })
                 }
               >
-                <option value="">Select Subcategory</option>
-                {filteredSubs.map((s) => (
-                  <option key={s} value={s}>
+                <option value="">Select</option>
+                {filteredSubs.map((s, index) => (
+                  <option key={index} value={s}>
                     {s}
                   </option>
                 ))}
@@ -341,20 +343,20 @@ const FinancialEntry = () => {
             </div>
           </div>
 
-          {/* --- Amount Input --- */}
-          <div className="space-y-1.5 pt-2">
-            <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest ml-1">
-              Monetary Value (৳)
+          {/* --- Row 4: Amount --- */}
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1 text-pretty">
+              Amount (৳)
             </label>
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-gray-400 text-xl">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 font-black text-gray-400 text-lg">
                 ৳
               </span>
               <input
                 required
                 type="number"
                 placeholder="0.00"
-                className="w-full pl-12 pr-4 py-4 bg-gray-50/50 border border-gray-200 rounded-xl text-3xl font-bold text-gray-900 outline-none focus:border-blue-500 focus:bg-white transition-all"
+                className="w-full pl-8 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-2xl font-black text-gray-900 outline-none focus:border-blue-500 focus:bg-white transition-all"
                 value={formData.amount}
                 onChange={(e) =>
                   setFormData({ ...formData, amount: e.target.value })
@@ -363,15 +365,13 @@ const FinancialEntry = () => {
             </div>
           </div>
 
-          {/* --- Remarks --- */}
-          <div className="space-y-1.5">
-            <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest ml-1">
-              Entry Remarks
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">
+              Remarks
             </label>
-            <textarea
-              rows="2"
-              className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 outline-none focus:border-blue-500 transition-all"
-              placeholder="Provide a brief explanation for this record..."
+            <input
+              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-xs font-medium text-gray-700 outline-none focus:border-blue-500 transition-all"
+              placeholder="Optional details..."
               value={formData.remarks}
               onChange={(e) =>
                 setFormData({ ...formData, remarks: e.target.value })
@@ -381,13 +381,13 @@ const FinancialEntry = () => {
 
           <button
             disabled={!motherAccount}
-            className={`w-full py-4 rounded-xl font-bold text-sm shadow-md transition-all uppercase tracking-widest ${
+            className={`w-full py-3 rounded-lg font-black text-xs shadow-md transition-all uppercase tracking-[0.2em] ${
               !motherAccount
                 ? "bg-gray-300 cursor-not-allowed"
                 : "bg-slate-900 text-white hover:bg-black active:scale-[0.98]"
             }`}
           >
-            Authorize & Post Entry
+            Post Entry
           </button>
         </form>
       </div>

@@ -14,6 +14,7 @@ export const useAuthStore = create(
 
       /**
        * @desc Initial authentication after login
+       * Ensure userData includes 'joiningDate' from the backend response.
        */
       setAuth: (userData, token) =>
         set({
@@ -23,8 +24,9 @@ export const useAuthStore = create(
         }),
 
       /**
-       * @desc 🔥 FIX: Updates user profile and fixes "Contact missing"
-       * This ensures fields like 'phone' from the DB are merged into the local state.
+       * @desc Updates user profile
+       * 🔥 IMPROVEMENT: Deep merge to ensure fields like 'joiningDate' aren't
+       * accidentally dropped if the update API response is partial.
        */
       updateUser: (updatedData) =>
         set((state) => ({
@@ -32,11 +34,13 @@ export const useAuthStore = create(
         })),
 
       /**
-       * @desc Alias for updateUser to support Settings.jsx handleSubmit calls
+       * @desc Explicitly sets the user object.
+       * Used during profile refreshes to ensure the frontend state perfectly
+       * matches the database record (image_834ccf.png).
        */
       setUser: (userData) =>
         set((state) => ({
-          user: state.user ? { ...state.user, ...userData } : userData,
+          user: userData ? { ...state.user, ...userData } : null,
         })),
 
       /**
@@ -44,13 +48,14 @@ export const useAuthStore = create(
        */
       logout: () => {
         set({ user: null, token: null, isAuthenticated: false });
+        // Standard Zustand persist handles removal, but explicit is safer for audit trails
         localStorage.removeItem("auth-storage");
       },
     }),
     {
       name: "auth-storage",
       storage: createJSONStorage(() => localStorage),
-      // Only persist essential data to prevent stale state issues
+      // Partialize ensures 'joiningDate' is saved to local storage for persistence
       partialize: (state) => ({
         user: state.user,
         token: state.token,

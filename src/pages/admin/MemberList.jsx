@@ -12,12 +12,13 @@ import {
   UserMinus,
   Filter,
   Users,
+  ShieldCheck,
 } from "lucide-react";
 import { useFetch } from "../../hooks/useFetch";
 import { useDebounce } from "../../hooks/useDebounce";
 import { useAuthStore } from "../../store/useAuthStore";
 import { BRANCHES } from "../../utils/constants";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency, formatDate } from "../../utils/formatters";
 import AddMemberModal from "../../components/modals/AddMemberModal";
 import DashboardSkeleton from "../../components/skeleton/DashboardSkeleton";
 import api from "../../services/api";
@@ -53,7 +54,8 @@ const MemberList = () => {
     return members.filter((m) => {
       const matchesSearch =
         m.name?.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-        m.nid?.includes(debouncedSearch);
+        m.nid?.includes(debouncedSearch) ||
+        m.phone?.includes(debouncedSearch);
       const matchesBranch = !selectedBranch || m.branch === selectedBranch;
       return matchesSearch && matchesBranch;
     });
@@ -92,12 +94,6 @@ const MemberList = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    if (!formData.phone.trim()) {
-      toast.error("Phone number is required");
-      setIsSubmitting(false);
-      return;
-    }
-
     try {
       const submissionData = { ...formData };
       submissionData.shares = parseInt(submissionData.shares) || 1;
@@ -132,8 +128,23 @@ const MemberList = () => {
   if (loading) return <DashboardSkeleton />;
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 animate-in fade-in duration-500">
-      {/* Header Section */}
+    <div className="max-w-7xl mx-auto space-y-6 animate-in fade-in duration-500 pb-10">
+      {/* --- PROFESSIONAL PRINT HEADER (Hidden on Screen) --- */}
+      <div className="hidden print:block border-b-2 border-slate-900 pb-6 mb-8 text-center">
+        <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">
+          Malibag Society Registry
+        </h1>
+        <p className="text-sm font-bold text-slate-500 uppercase tracking-widest mt-1">
+          Official Member Directory Report
+        </p>
+        <div className="flex justify-between items-center mt-6 text-[10px] font-black uppercase text-slate-400">
+          <span>Generated On: {formatDate(new Date())}</span>
+          <span>Branch Scope: {selectedBranch || "Global Directory"}</span>
+          <span>Security: Registry Verified</span>
+        </div>
+      </div>
+
+      {/* Screen Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-6 no-print">
         <div>
           <h1 className="text-xl font-bold text-slate-900 tracking-tight">
@@ -144,27 +155,26 @@ const MemberList = () => {
             <span className="font-bold text-slate-700">
               {filteredMembers.length}
             </span>{" "}
-            active society members and their profiles.
+            active society members.
           </p>
         </div>
-
         <div className="flex items-center gap-2">
           <button
             onClick={handlePrint}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-all text-xs font-bold text-slate-600 active:scale-95"
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-all text-xs font-bold text-slate-600 active:scale-95 shadow-sm"
           >
-            <Printer size={16} /> Print Directory
+            <Printer size={16} /> Print Report
           </button>
           <button
             onClick={() => handleOpenModal()}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg font-bold text-xs hover:bg-slate-800 transition-all active:scale-95 shadow-sm"
+            className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg font-bold text-xs hover:bg-slate-800 transition-all active:scale-95 shadow-lg"
           >
-            <UserPlus size={16} /> Add New Member
+            <UserPlus size={16} /> Register Member
           </button>
         </div>
       </div>
 
-      {/* Filter Stats Bar */}
+      {/* Filter Stats Bar - Hidden on Print */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 no-print">
         <div className="lg:col-span-2 relative">
           <Search
@@ -173,8 +183,8 @@ const MemberList = () => {
           />
           <input
             type="text"
-            placeholder="Search by Name, NID, or Phone..."
-            className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:border-slate-400 focus:ring-0 outline-none transition-all text-sm font-medium"
+            placeholder="Search Name, NID, or Phone..."
+            className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:border-slate-400 outline-none transition-all text-sm font-medium"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -197,11 +207,11 @@ const MemberList = () => {
             ))}
           </select>
         </div>
-        <div className="bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 flex items-center justify-between">
-          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-            Total Shares
+        <div className="bg-white border border-slate-200 rounded-lg px-4 py-2.5 flex items-center justify-between shadow-sm">
+          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+            Total Society Shares
           </span>
-          <span className="text-base font-bold text-slate-900">
+          <span className="text-base font-black text-blue-600">
             {filteredMembers.reduce((acc, m) => acc + (m.shares || 0), 0)}
           </span>
         </div>
@@ -212,34 +222,34 @@ const MemberList = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50/50 border-b border-slate-100">
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                  Profile Information
+              <tr className="bg-slate-50/50 border-b border-slate-100 print:bg-slate-100">
+                <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                  Profile Details
                 </th>
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">
+                <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">
                   Branch
                 </th>
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">
-                  Shares
+                <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">
+                  Units
                 </th>
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">
-                  Total Contributed
+                <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right">
+                  Net Assets
                 </th>
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right no-print">
-                  Management
+                <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right no-print">
+                  Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
+            <tbody className="divide-y divide-slate-50 print:divide-slate-200">
               {filteredMembers.map((m) => (
                 <tr
                   key={m._id}
-                  className="hover:bg-slate-50/50 transition-colors group"
+                  className="hover:bg-slate-50/50 transition-colors group print:break-inside-avoid"
                 >
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div
-                        className={`w-9 h-9 rounded-lg flex items-center justify-center ${
+                        className={`w-9 h-9 rounded-lg flex items-center justify-center print:hidden ${
                           m.status === "active"
                             ? "bg-emerald-50 text-emerald-600"
                             : "bg-slate-100 text-slate-400"
@@ -252,35 +262,29 @@ const MemberList = () => {
                         )}
                       </div>
                       <div>
-                        <div className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                        <div className="font-black text-slate-900 text-sm uppercase tracking-tight">
                           {m.name}
-                          {m.status === "active" && (
-                            <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
-                          )}
                         </div>
-                        <div className="flex items-center gap-3 mt-0.5">
-                          <span className="text-[11px] font-medium text-slate-500">
-                            📞 {m.phone}
-                          </span>
-                          <span className="text-[11px] font-medium text-slate-400 uppercase">
-                            NID: {m.nid}
-                          </span>
+                        <div className="flex items-center gap-3 mt-1 text-[10px] font-bold text-slate-500">
+                          <span>PH: {m.phone}</span>
+                          <span className="text-slate-300">|</span>
+                          <span>A/C: {m.bankAccount}</span>
                         </div>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 text-center">
-                    <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded uppercase tracking-wider">
+                    <span className="text-[9px] font-black text-slate-600 bg-slate-100 px-2 py-1 rounded uppercase tracking-tighter print:border print:border-slate-200">
                       {m.branch}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-center">
-                    <span className="text-sm font-bold text-slate-700">
+                    <span className="text-sm font-black text-slate-700">
                       {m.shares || 1}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <span className="text-sm font-bold text-slate-900">
+                    <span className="text-sm font-black text-slate-900">
                       {formatCurrency(m.totalDeposited || 0)}
                     </span>
                   </td>
@@ -288,24 +292,21 @@ const MemberList = () => {
                     <div className="flex justify-end items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
                       <button
                         onClick={() => handleOpenModal(m)}
-                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                        title="Edit"
+                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
                       >
                         <Edit3 size={16} />
                       </button>
                       {isSuperAdmin && (
                         <button
                           onClick={() => handleDelete(m._id)}
-                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                          title="Delete"
+                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
                         >
                           <Trash2 size={16} />
                         </button>
                       )}
                       <Link
                         to={`/admin/members/${m._id}`}
-                        className="p-2 text-slate-400 hover:text-slate-900 transition-all"
-                        title="View Details"
+                        className="p-2 text-slate-400 hover:text-slate-900"
                       >
                         <ChevronRight size={18} />
                       </Link>
@@ -314,8 +315,35 @@ const MemberList = () => {
                 </tr>
               ))}
             </tbody>
+            {/* Total Footer for Print Only */}
+            <tfoot className="hidden print:table-footer-group border-t-2 border-slate-900">
+              <tr>
+                <td
+                  colSpan="2"
+                  className="px-6 py-4 text-[10px] font-black uppercase text-slate-900"
+                >
+                  Society Aggregates
+                </td>
+                <td className="px-6 py-4 text-center font-black text-slate-900">
+                  {filteredMembers.reduce((acc, m) => acc + (m.shares || 0), 0)}
+                </td>
+                <td className="px-6 py-4 text-right font-black text-slate-900">
+                  {formatCurrency(
+                    filteredMembers.reduce(
+                      (acc, m) => acc + (m.totalDeposited || 0),
+                      0
+                    )
+                  )}
+                </td>
+                <td className="no-print"></td>
+              </tr>
+            </tfoot>
           </table>
         </div>
+      </div>
+
+      <div className="hidden print:block mt-12 text-center text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+        End of Official Registry Report • Malibag Society Ledger Management
       </div>
 
       <AddMemberModal
